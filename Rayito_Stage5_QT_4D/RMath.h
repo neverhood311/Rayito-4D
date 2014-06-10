@@ -35,21 +35,21 @@ namespace Rayito
 struct Color
 {
     float m_r, m_g, m_b;
-    
+
     Color()                          : m_r(0.0f), m_g(0.0f), m_b(0.0f)    { }
     Color(const Color& c)            : m_r(c.m_r), m_g(c.m_g), m_b(c.m_b) { }
     Color(float r, float g, float b) : m_r(r), m_g(g), m_b(b)             { }
     explicit Color(float f)          : m_r(f), m_g(f), m_b(f)             { }
-    
-    
+
+
     void clamp(float min = 0.0f, float max = 1.0f)
     {
         m_r = std::max(min, std::min(max, m_r));
         m_g = std::max(min, std::min(max, m_g));
         m_b = std::max(min, std::min(max, m_b));
     }
-    
-    
+
+
     Color& operator =(const Color& c)
     {
         m_r = c.m_r;
@@ -57,7 +57,7 @@ struct Color
         m_b = c.m_b;
         return *this;
     }
-    
+
     Color& operator +=(const Color& c)
     {
         m_r += c.m_r;
@@ -65,7 +65,7 @@ struct Color
         m_b += c.m_b;
         return *this;
     }
-    
+
     Color& operator -=(const Color& c)
     {
         m_r -= c.m_r;
@@ -73,7 +73,7 @@ struct Color
         m_b -= c.m_b;
         return *this;
     }
-    
+
     Color& operator *=(const Color& c)
     {
         m_r *= c.m_r;
@@ -81,7 +81,7 @@ struct Color
         m_b *= c.m_b;
         return *this;
     }
-    
+
     Color& operator /=(const Color& c)
     {
         m_r /= c.m_r;
@@ -89,7 +89,7 @@ struct Color
         m_b /= c.m_b;
         return *this;
     }
-    
+
     Color& operator *=(float f)
     {
         m_r *= f;
@@ -97,7 +97,7 @@ struct Color
         m_b *= f;
         return *this;
     }
-    
+
     Color& operator /=(float f)
     {
         m_r /= f;
@@ -178,25 +178,25 @@ inline Color operator /(const Color& c, float f)
 struct Vector
 {
     float m_x, m_y, m_z, m_w;
-    
+
     Vector()                          : m_x(0.0f), m_y(0.0f), m_z(0.0f), m_w(0.0f)      { }
     Vector(const Vector& v)           : m_x(v.m_x), m_y(v.m_y), m_z(v.m_z), m_w(v.m_w)  { }
     Vector(float x, float y, float z, float w) : m_x(x), m_y(y), m_z(z), m_w(w)         { }
     explicit Vector(float f)          : m_x(f), m_y(f), m_z(f), m_w(f)                  { }
-    
-    
+
+
     float length2() const { return m_x * m_x + m_y * m_y + m_z * m_z + m_w * m_w; }
     float length()  const { return std::sqrt(length2()); }
-    
+
     // Returns old length from before normalization (ignore the return value if you don't need it)
     float  normalize()        { float len = length(); if (len > 0) *this /= len; return len; }
     // Return a vector in this same direction, but normalized
     Vector normalized() const { Vector r(*this); r.normalize(); return r; }
-    
+
     float maxComponent() const { return std::max(std::max(std::max(m_x, m_y), m_z), m_w); }
     float minComponent() const { return std::min(std::min(std::min(m_x, m_y), m_z), m_w); }
-    
-    
+
+
     Vector& operator =(const Vector& v)
     {
         m_x = v.m_x;
@@ -205,7 +205,7 @@ struct Vector
         m_w = v.m_w;
         return *this;
     }
-    
+
     Vector& operator +=(const Vector& v)
     {
         m_x += v.m_x;
@@ -214,7 +214,7 @@ struct Vector
         m_w += v.m_w;
         return *this;
     }
-    
+
     Vector& operator -=(const Vector& v)
     {
         m_x -= v.m_x;
@@ -223,7 +223,7 @@ struct Vector
         m_w -= v.m_w;
         return *this;
     }
-    
+
     Vector& operator *=(const Vector& v)
     {
         m_x *= v.m_x;
@@ -232,7 +232,7 @@ struct Vector
         m_w *= v.m_w;
         return *this;
     }
-    
+
     Vector& operator *=(float f)
     {
         m_x *= f;
@@ -241,7 +241,7 @@ struct Vector
         m_w *= f;
         return *this;
     }
-    
+
     Vector& operator /=(const Vector& v)
     {
         m_x /= v.m_x;
@@ -250,7 +250,7 @@ struct Vector
         m_w /= v.m_w;
         return *this;
     }
-    
+
     Vector& operator /=(float f)
     {
         m_x /= f;
@@ -259,7 +259,7 @@ struct Vector
         m_w /= f;
         return *this;
     }
-    
+
     Vector operator -() const
     {
         return Vector(-m_x, -m_y, -m_z, -m_w);

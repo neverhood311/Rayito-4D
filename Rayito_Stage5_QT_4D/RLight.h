@@ -88,8 +88,7 @@ public:
         Point worldRelativePoint = worldPoint - m_position;
         Point localPoint = Point(dot(worldRelativePoint, side1Norm),
                                  dot(worldRelativePoint, side2Norm),
-                                 0.0f,
-                                 0.0f); //TODO: Rectangular lights in 4-Space?
+                                 0.0f);
         
         // Do the actual range check
         if (localPoint.m_x < 0.0f || localPoint.m_x > side1Length ||
@@ -147,8 +146,7 @@ public:
         Point worldRelativePoint = worldPoint - m_position;
         Point localPoint = Point(dot(worldRelativePoint, side1Norm),
                                  dot(worldRelativePoint, side2Norm),
-                                 0.0f,
-                                 0.0f); //TODO: Hyperplane intersection test?
+                                 0.0f);
         
         // Do the actual range check
         if (localPoint.m_x < 0.0f || localPoint.m_x > side1Length ||
@@ -160,22 +158,11 @@ public:
         return true;
     }
     
-    virtual BBox bbox()
-    {
-        Point corners[] = { m_position,
-                            m_position + m_side1,
-                            m_position + m_side2,
-                            m_position + m_side1 + m_side2 };
-        Point minCorner = min(min(min(corners[0], corners[1]), corners[2]), corners[3]);
-        Point maxCorner = max(max(max(corners[0], corners[1]), corners[2]), corners[3]);
-        return BBox(minCorner, maxCorner);
-    }
-    
     // Given two random numbers between 0.0 and 1.0, find a location + surface
     // normal on the surface of the *light*.
     virtual bool sampleSurface(const Point& surfPosition,
                                const Vector& surfNormal,
-                               float u1, float u2, float u3,
+                               float u1, float u2,
                                Point& outPosition,
                                Vector& outNormal,
                                float& outPdf)
@@ -258,23 +245,18 @@ public:
         return m_pShape->doesIntersect(ray);
     }
     
-    virtual BBox bbox()
-    {
-        return m_pShape->bbox();
-    }
-    
     // Given two random numbers between 0.0 and 1.0, find a location + surface
     // normal on the surface of the *light*.
     virtual bool sampleSurface(const Point& surfPosition,
                                const Point& surfNormal,
-                               float u1, float u2, float u3,
+                               float u1, float u2,
                                Point& outPosition,
                                Vector& outNormal,
                                float& outPdf)
     {
         // Forward surface sampling on to the shape
         if (!m_pShape->sampleSurface(surfPosition, surfNormal,
-                                     u1, u2, u3,
+                                     u1, u2,
                                      outPosition, outNormal, outPdf))
         {
             outPdf = 0.0f;

@@ -24,40 +24,40 @@ class Brdf
 {
 public:
     Brdf() { }
-    
+
     virtual ~Brdf() { }
-    
+
     /*
      * BRDF details:
-     * 
+     *
      * There are two variations of each of these functions: those that produce
      * PDFs with respect to solid angle (not accounting for angle between
      * outgoing vector and the normal) or projected solid angle (the opposite).
      * The PDFs always go from 0.0 to 1.0.
-     * 
+     *
      * The outgoing direction is away from the surface in the same hemisphere as
      * the normal, while the incoming is toward the surface opposite the normal.
      * These BRDFs must also be energy-conserving, meaning they cannot ever
      * reflect back more light than they receive when you gather all of the light
      * reflected over the entire hemisphere around the surface normal.
-     * 
+     *
      * The evaluate methods return the reflectance given the incoming and
      * outgoing directions and the surface normal, and also output the PDF
      * (probability distribution function) value for that configuration of
      * in/out/normal.
-     * 
+     *
      * The sample methods will generate an incoming direction given an outgoing
      * direction and normal, also returning the PDF value for having generated
      * that incoming direction.
-     * 
+     *
      * The pdf methods just return the PDF of the in/out/normal configuration.
-     * 
+     *
      * The Dirac distribution flag indicates this is a BRDF that really only
      * reflects in one direction (perfect reflection or refraction), indicating
      * the PDF of a given in/out/normal combo will always be zero.  However,
      * the sample methods will return the exact input direction with a PDF of 1.0.
      */
-    
+
     virtual float evaluateSA(const Vector& incoming, const Vector& outgoing, const Vector& normal, float& outPdf)  const = 0;
     virtual float evaluatePSA(const Vector& incoming, const Vector& outgoing, const Vector& normal, float& outPdf) const
     {
@@ -66,7 +66,7 @@ public:
         outPdf /= std::fabs(dot(incoming, normal));
         return reflectance;
     }
-    
+
     virtual float sampleSA(Vector& outIncoming, const Vector& outgoing, const Vector& normal, float u1, float u2, float& outPdf)  const = 0;
     virtual float samplePSA(Vector& outIncoming, const Vector& outgoing, const Vector& normal, float u1, float u2, float& outPdf) const
     {
@@ -75,14 +75,14 @@ public:
         outPdf /= std::fabs(dot(outIncoming, normal));
         return reflectance;
     }
-    
+
     virtual float pdfSA(const Vector& incoming, const Vector& outgoing, const Vector& normal)  const = 0;
     virtual float pdfPSA(const Vector& incoming, const Vector& outgoing, const Vector& normal) const
     {
         // Convert from solid-angle PDF to projected-solid-angle PDF
         return pdfSA(incoming, outgoing, normal) / std::fabs(dot(incoming, normal));
     }
-    
+
     virtual bool isDiracDistribution() const { return false; }
 };
 
@@ -92,10 +92,10 @@ class Lambert : public Brdf
 {
 public:
     Lambert() : Brdf() { }
-    
+
     virtual ~Lambert() { }
-    
-    
+
+
     virtual float evaluateSA(const Vector& incoming, const Vector& outgoing, const Vector& normal, float& outPdf) const
     {
         // If incoming and outgoing are in the same hemisphere, that means the
@@ -112,7 +112,7 @@ public:
         outPdf = std::fabs(nDotI) / M_PI;
         return 1.0f / M_PI;
     }
-    
+
     virtual float evaluatePSA(const Vector& incoming, const Vector& outgoing, const Vector& normal, float& outPdf) const
     {
         // If incoming and outgoing are in the same hemisphere, that means the
@@ -130,8 +130,8 @@ public:
         outPdf = 1.0f / M_PI;
         return 1.0f / M_PI;
     }
-    
-    
+
+
     virtual float sampleSA(Vector& outIncoming, const Vector& outgoing, const Vector& normal, float u1, float u2, float& outPdf) const
     {
         // Generate incoming direction towards normal in the hemisphere,
@@ -150,7 +150,7 @@ public:
         // Normalized diffuse reflectance is always 1/pi
         return 1.0f / M_PI;
     }
-    
+
     virtual float samplePSA(Vector& outIncoming, const Vector& outgoing, const Vector& normal, float u1, float u2, float& outPdf) const
     {
         // Generate incoming direction towards normal in the hemisphere,
@@ -170,8 +170,8 @@ public:
         // Normalized diffuse reflectance is always 1/pi
         return 1.0f / M_PI;
     }
-    
-    
+
+
     virtual float pdfSA(const Vector& incoming, const Vector& outgoing, const Vector& normal) const
     {
         // If incoming and outgoing are in the same hemisphere, that means the
@@ -186,7 +186,7 @@ public:
         // Standard solid-angle PDF for diffuse reflectance
         return std::fabs(nDotI) / M_PI;
     }
-    
+
     virtual float pdfPSA(const Vector& incoming, const Vector& outgoing, const Vector& normal) const
     {
         // If incoming and outgoing are in the same hemisphere, that means the
@@ -209,10 +209,10 @@ class Glossy : public Brdf
 {
 public:
     Glossy(float roughness) : Brdf(), m_exponent(1.0f / (roughness * roughness)) { }
-    
+
     virtual ~Glossy() { }
-    
-    
+
+
     // Note used yet, but it may be in the future (the standard A-S model has this)
     float schlickFresnel(float reflectionIncidentToNormal,
                          float cosTheta) const
@@ -222,7 +222,7 @@ public:
                 (1.0f - reflectionIncidentToNormal) *
                 std::pow(std::max(1.0f - cosTheta, 0.0f), 5);
     }
-    
+
     virtual float evaluateSA(const Vector& incoming, const Vector& outgoing, const Vector& normal, float& outPdf) const
     {
         // If incoming and outgoing are in the same hemisphere, that means the
@@ -248,7 +248,7 @@ public:
         outPdf = d / (4.0f * std::fabs(dot(outgoing, half)));
         return result;
     }
-    
+
     virtual float evaluatePSA(const Vector& incoming, const Vector& outgoing, const Vector& normal, float& outPdf) const
     {
         // If incoming and outgoing are in the same hemisphere, that means the
@@ -274,8 +274,8 @@ public:
         outPdf = d / (4.0f * std::fabs(dot(outgoing, half)) * std::fabs(nDotI));
         return result;
     }
-    
-    
+
+
     virtual float sampleSA(Vector& outIncoming, const Vector& outgoing, const Vector& normal, float u1, float u2, float& outPdf) const
     {
         // Generate half-vector from the A-S model
@@ -298,7 +298,7 @@ public:
         // Evaluate the A-S model to get final reflectance and PDF
         return evaluateSA(outIncoming, outgoing, normal, outPdf);
     }
-    
+
     virtual float samplePSA(Vector& outIncoming, const Vector& outgoing, const Vector& normal, float u1, float u2, float& outPdf) const
     {
         // Generate half-vector from the A-S model
@@ -321,8 +321,8 @@ public:
         // Evaluate the A-S model to get final reflectance and PDF
         return evaluatePSA(outIncoming, outgoing, normal, outPdf);
     }
-    
-    
+
+
     virtual float pdfSA(const Vector& incoming, const Vector& outgoing, const Vector& normal) const
     {
         // If incoming and outgoing are in the same hemisphere, that means the
@@ -344,7 +344,7 @@ public:
         return (m_exponent + 1.0f) * std::pow(std::fabs(dot(normal, half)), m_exponent) /
                (8.0f * M_PI * std::fabs(dot(outgoing, half)));
     }
-    
+
     virtual float pdfPSA(const Vector& incoming, const Vector& outgoing, const Vector& normal) const
     {
         // If incoming and outgoing are in the same hemisphere, that means the
@@ -366,7 +366,7 @@ public:
         return (m_exponent + 1.0f) * std::pow(std::fabs(dot(normal, half)), m_exponent) /
                (8.0f * M_PI * std::fabs(dot(outgoing, half)) * std::fabs(nDotI));
     }
-    
+
 protected:
     float m_exponent;
 };
@@ -380,10 +380,10 @@ class Material
 {
 public:
     virtual ~Material() { }
-    
+
     // If the material is emitting, override this
     virtual Color emittance() { return Color(); }
-    
+
     virtual Color evaluate(const Point& position,
                            const Vector& normal,
                            const Vector& outgoingRayDirection,
@@ -397,9 +397,9 @@ class DiffuseMaterial : public Material
 {
 public:
     DiffuseMaterial(const Color& color) : m_color(color), m_lambert() { }
-    
+
     virtual ~DiffuseMaterial() { }
-    
+
     virtual Color evaluate(const Point& position,
                            const Vector& normal,
                            const Vector& outgoingRayDirection,
@@ -410,7 +410,7 @@ public:
         pBrdfChosen = &m_lambert;
         return m_color;
     }
-    
+
 protected:
     Color m_color;
     Lambert m_lambert;
@@ -422,9 +422,9 @@ class GlossyMaterial : public Material
 {
 public:
     GlossyMaterial(const Color& color, float roughness) : m_color(color), m_glossy(roughness) { }
-    
+
     virtual ~GlossyMaterial() { }
-    
+
     virtual Color evaluate(const Point& position,
                            const Vector& normal,
                            const Vector& outgoingRayDirection,
@@ -435,7 +435,7 @@ public:
         pBrdfChosen = &m_glossy;
         return m_color;
     }
-    
+
 protected:
     Color m_color;
     Glossy m_glossy;
@@ -447,11 +447,11 @@ class Emitter : public Material
 {
 public:
     Emitter(const Color& color, float power) : m_color(color), m_power(power) { }
-    
+
     virtual ~Emitter() { }
-    
+
     virtual Color emittance() { return m_color * m_power; }
-    
+
     virtual Color evaluate(const Point& position,
                            const Vector& normal,
                            const Vector& incomingRayDirection,
@@ -463,7 +463,7 @@ public:
         brdfWeight = 1.0f;
         return Color();
     }
-    
+
 protected:
     Color m_color;
     float m_power;

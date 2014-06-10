@@ -8,14 +8,12 @@
 #define __RSCENE_H__
 
 #include <list>
-#include <vector>
 #include <algorithm>
 
 #include "RMath.h"
 #include "RMaterial.h"
 #include "RRay.h"
 #include "RSampling.h"
-#include "RAccel.h"
 
 
 namespace Rayito
@@ -37,12 +35,6 @@ public:
     virtual bool intersect(Intersection& intersection) = 0;
     virtual bool doesIntersect(const Ray& ray) = 0;
     
-    // Get bbox of this shape (and its children)
-    virtual BBox bbox() = 0;
-    virtual bool infiniteExtent() const { return false; }
-    
-    virtual void prepare() { }
-    
     // Usually for lights: given two random numbers between 0.0 and 1.0, find a
     // location + surface normal on the surface, and return the PDF for how
     // likely the sample was (with respect to solid angle).  Return false if not
@@ -51,7 +43,6 @@ public:
                                const Vector& refNormal,
                                float u1,
                                float u2,
-                               float u3,
                                Point& outPosition,
                                Vector& outNormal,
                                float& outPdf)
@@ -84,15 +75,6 @@ public:
     
     // Is this shape itself actually a light?
     virtual bool isLight() const { return false; }
-    
-    // Methods for BVH build
-    virtual unsigned int numElements()             const { return 0; }
-    virtual BBox         elementBBox(unsigned int) const { return BBox(); }
-    virtual float        elementArea(unsigned int) const { return 0; }
-    
-    // Methods for BVH intersection
-    virtual bool intersect(Intersection&, unsigned int)      { return false; }
-    virtual bool doesIntersect(const Ray& ray, unsigned int) { return false; }
 };
 
 
@@ -100,36 +82,20 @@ public:
 class ShapeSet : public Shape
 {
 public:
-    ShapeSet() : m_shapes(), m_infiniteShapes(), m_bvh(*this) { }
-    
     virtual ~ShapeSet() { }
     
     virtual bool intersect(Intersection& intersection)
     {
         bool intersectedAny = false;
-        for (std::vector<Shape*>::iterator iter = m_infiniteShapes.begin();
-             iter != m_infiniteShapes.end();
+        for (std::list<Shape*>::iterator iter = m_shapes.begin();
+             iter != m_shapes.end();
              ++iter)
         {
             Shape *pShape = *iter;
-            if (pShape->intersect(intersection))
-                intersectedAny = true;
-        }
-        
-        if (m_shapes.size() > 2)
-        {
-            if (m_bvh.intersect(intersection))
-                intersectedAny = true;
-        }
-        else
-        {
-            for (std::vector<Shape*>::iterator iter = m_shapes.begin();
-                 iter != m_shapes.end();
-                 ++iter)
+            bool intersected = pShape->intersect(intersection);
+            if (intersected)
             {
-                Shape *pShape = *iter;
-                if (pShape->intersect(intersection))
-                    intersectedAny = true;
+                intersectedAny = true;
             }
         }
         return intersectedAny;
@@ -137,75 +103,23 @@ public:
     
     virtual bool doesIntersect(const Ray& ray)
     {
-        for (std::vector<Shape*>::iterator iter = m_infiniteShapes.begin();
-             iter != m_infiniteShapes.end();
-             ++iter)
-        {
-            Shape *pShape = *iter;
-            if (pShape->doesIntersect(ray))
-                return true;
-        }
-        
-        if (m_shapes.size() > 2)
-        {
-            return m_bvh.doesIntersect(ray);
-        }
-        for (std::vector<Shape*>::iterator iter = m_shapes.begin();
+        for (std::list<Shape*>::iterator iter = m_shapes.begin();
              iter != m_shapes.end();
              ++iter)
         {
             Shape *pShape = *iter;
-            if (pShape->doesIntersect(ray))
+            bool intersected = pShape->doesIntersect(ray);
+            if (intersected)
+            {
                 return true;
+            }
         }
         return false;
     }
     
-    virtual void prepare()
-    {
-        for (std::vector<Shape*>::iterator iter = m_infiniteShapes.begin();
-             iter != m_infiniteShapes.end();
-             ++iter)
-        {
-            Shape *pShape = *iter;
-            pShape->prepare();
-        }
-        for (std::vector<Shape*>::iterator iter = m_shapes.begin();
-             iter != m_shapes.end();
-             ++iter)
-        {
-            Shape *pShape = *iter;
-            pShape->prepare();
-        }
-        if (m_shapes.size() > 2)
-            m_bvh.build();
-    }
-    
-    virtual BBox bbox()
-    {
-        BBox totalBBox;
-        for (std::vector<Shape*>::iterator iter = m_shapes.begin();
-             iter != m_shapes.end();
-             ++iter)
-        {
-            totalBBox = totalBBox.combined((*iter)->bbox());
-        }
-        return totalBBox;
-    }
-    
-    virtual float surfaceAreaPdf() const
-    {
-        float areaTotal = 0.0f;
-        for (unsigned int i = 0; i < numElements(); ++i)
-        {
-            areaTotal += elementArea(i);
-        }
-        return areaTotal > 0.0f ? 1.0f / areaTotal : 0.0f;
-    }
-    
     virtual void findLights(std::list<Shape*>& outLightList)
     {
-        for (std::vector<Shape*>::iterator iter = m_shapes.begin();
+        for (std::list<Shape*>::iterator iter = m_shapes.begin();
              iter != m_shapes.end();
              ++iter)
         {
@@ -214,29 +128,12 @@ public:
         }
     }
     
-    void addShape(Shape *pShape)
-    {
-        if (pShape->infiniteExtent())
-            m_infiniteShapes.push_back(pShape);
-        else
-            m_shapes.push_back(pShape);
-    }
+    void addShape(Shape *pShape) { m_shapes.push_back(pShape); }
     
-    void clearShapes() { m_shapes.clear(); m_infiniteShapes.clear(); }
-    
-    // Methods for BVH build
-    virtual unsigned int numElements()                   const { return m_shapes.size(); }
-    virtual BBox         elementBBox(unsigned int index) const { return m_shapes[index]->bbox(); }
-    virtual float        elementArea(unsigned int index) const { return 1.0f / m_shapes[index]->surfaceAreaPdf(); }
-    
-    // Methods for BVH intersection
-    virtual bool intersect(Intersection& intersection, unsigned int index) { return m_shapes[index]->intersect(intersection); }
-    virtual bool doesIntersect(const Ray& ray, unsigned int index)         { return m_shapes[index]->doesIntersect(ray); }
+    void clearShapes() { m_shapes.clear(); }
     
 protected:
-    std::vector<Shape*> m_shapes;
-    std::vector<Shape*> m_infiniteShapes;
-    Bvh<ShapeSet> m_bvh;
+    std::list<Shape*> m_shapes;
 };
 
 
@@ -327,13 +224,6 @@ public:
         
         return true;
     }
-    
-    virtual BBox bbox()
-    {
-        return BBox();
-    }
-    
-    virtual bool infiniteExtent() const { return true; }
 
 protected:
     Point m_position;
@@ -356,8 +246,6 @@ public:
     }
     
     virtual ~Sphere() { }
-    
-    void setMaterial(Material* pMaterial) { m_pMaterial = pMaterial; }
     
     virtual bool intersect(Intersection& intersection)
     {
@@ -476,19 +364,12 @@ public:
         return false;
     }
     
-    virtual BBox bbox()
-    {
-        return BBox(m_position - Point(m_radius),
-                    m_position + Point(m_radius));
-    }
-    
     // Given two random numbers between 0.0 and 1.0, find a location + surface
     // normal on the surface of the *light*.
     virtual bool sampleSurface(const Point& refPosition,
                                const Vector& refNormal,
                                float u1,
                                float u2,
-                               float u3,
                                Point& outPosition,
                                Vector& outNormal,
                                float& outPdf)
@@ -508,10 +389,10 @@ public:
         // sample more efficiently within the cone
         float sinThetaMax2 = m_radius * m_radius / dist2;
         float cosThetaMax = std::sqrt(std::max(0.0f, 1.0f - sinThetaMax2));
-        Vector x, y, z, w;
-        makeCoordinateSpace(toCenter, x, y, z, w);
+        Vector x, y, z;
+        makeCoordinateSpace(toCenter, x, y, z);
         Vector localCone = uniformToCone(u1, u2, cosThetaMax);
-        Vector cone = transformFromLocalSpace(localCone, x, y, z, w).normalized();
+        Vector cone = transformFromLocalSpace(localCone, x, y, z).normalized();
         // Make sure the generated direction actually hits the sphere; if not, adjust
         Ray ray(refPosition, cone);
         Intersection isect(ray);

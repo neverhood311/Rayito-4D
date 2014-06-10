@@ -320,7 +320,7 @@ inline Vector uniformToSphere(float u1, float u2)
     // Find a random angle around the sphere's equator
     float phi = M_PI * 2.0f * u2;
     // And put it all together...
-    return Vector(radius * std::cos(phi), radius * std::sin(phi), z, 0.0f); //TODO: what should the w value be here?
+    return Vector(radius * std::cos(phi), radius * std::sin(phi), z, 0.0f);
 }
 
 
@@ -351,7 +351,7 @@ inline Vector uniformToHemisphere(float u1, float u2)
     return Vector(radius * std::cos(phi),
                   radius * std::sin(phi),
                   u1,
-                  0.0f);    //TODO: How do we find a random point on a hyperhemisphere?
+                  0.0f);
 }
 
 
@@ -363,7 +363,7 @@ inline Vector uniformToCosineHemisphere(float u1, float u2)
     //uniformToUniformDisk(u1, u2, diskX, diskY);
     concentricSampleDisk(u1, u2, diskX, diskY);
     float z = std::sqrt(std::max(0.0f, 1.0f - diskX * diskX - diskY * diskY));
-    return Vector(diskX, diskY, z, 0.0f);   //TODO: How do we find a random point on a cosine hyperhemisphere?
+    return Vector(diskX, diskY, z, 0.0f);
 }
 
 
@@ -373,21 +373,12 @@ inline Vector uniformToCone(float u1, float u2, float cosThetaMax)
     float cosTheta = u1 * (cosThetaMax - 1.0f) + 1.0f;
     float sinTheta = std::sqrt(std::max(0.0f, 1.0f - cosTheta * cosTheta));
     float phi = u2 * M_PI * 2.0f;
-    return Vector(std::cos(phi) * sinTheta, std::sin(phi) * sinTheta, cosTheta, 0.0f);  //TODO: How do we handle a cone?
+    return Vector(std::cos(phi) * sinTheta, std::sin(phi) * sinTheta, cosTheta, 0.0f);
 }
 
 inline float uniformConePdf(float cosThetaMax)
 {
     return cosThetaMax >= 1.0f ? 0.0 : 1.0f / (2.0f * M_PI * (1.0f - cosThetaMax));
-}
-
-
-// Random point on a triangle, converted to barycentric alpha and beta (gamma is 1 - alpha - beta)
-inline void uniformToBarycentricTriangle(float u1, float u2, float& btu, float& btv)
-{
-    float u1_sqrt = std::sqrt(u1);
-    btu = 1.0f - u1_sqrt;
-    btv = u2 * u1_sqrt;
 }
 
 

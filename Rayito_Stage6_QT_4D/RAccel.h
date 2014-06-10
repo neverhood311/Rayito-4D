@@ -34,7 +34,7 @@ struct BBox
         return *this;
     }
     
-    bool valid() const { return m_min.m_x < m_max.m_x && m_min.m_y < m_max.m_y && m_min.m_z < m_max.m_z; }
+    bool valid() const { return m_min.m_x < m_max.m_x && m_min.m_y < m_max.m_y && m_min.m_z < m_max.m_z && m_min.m_w < m_max.m_w; }
     bool empty() const { return !valid(); }
     
     bool intersects(const Ray& ray, float& inout_t0, float& inout_t1) const
@@ -81,7 +81,8 @@ struct BBox
         // Is the point inside the bbox?
         return m_min.m_x <= p.m_x && m_max.m_x >= p.m_x &&
                m_min.m_y <= p.m_y && m_max.m_y >= p.m_y &&
-               m_min.m_z <= p.m_z && m_max.m_z >= p.m_z;
+               m_min.m_z <= p.m_z && m_max.m_z >= p.m_z &&
+               m_min.m_w <= p.m_w && m_max.m_w >= p.m_w;
     }
     
     BBox intersection(const BBox& bbox) const
@@ -97,6 +98,7 @@ typedef unsigned int BvhNodeFlags;
 const BvhNodeFlags kSplitX = 0;
 const BvhNodeFlags kSplitY = 1;
 const BvhNodeFlags kSplitZ = 2;
+const BvhNodeFlags kSplitW = 3;
 const BvhNodeFlags kSplitFlags = 0x3;
 const BvhNodeFlags kLeafNode = 0x4;
 // 29 bits left over for # of prims if we ever get around to that
@@ -212,7 +214,8 @@ private:
         {
             return (m_split == kSplitX && m_splitAxis < (elem.m_bbox.m_max.m_x + elem.m_bbox.m_min.m_x) * 0.5f) ||
                    (m_split == kSplitY && m_splitAxis < (elem.m_bbox.m_max.m_y + elem.m_bbox.m_min.m_y) * 0.5f) ||
-                   (m_split == kSplitZ && m_splitAxis < (elem.m_bbox.m_max.m_z + elem.m_bbox.m_min.m_z) * 0.5f);
+                   (m_split == kSplitZ && m_splitAxis < (elem.m_bbox.m_max.m_z + elem.m_bbox.m_min.m_z) * 0.5f) ||
+                   (m_split == kSplitW && m_splitAxis < (elem.m_bbox.m_max.m_w + elem.m_bbox.m_min.m_w) * 0.5f);
         }
     };
     
@@ -369,11 +372,12 @@ bool Bvh<T>::doesIntersect(const Ray& ray)
     
     // In order to find which child is "closer" along the ray we have to know
     // which direction the ray is going relative to each BVH node's spliting axis
-    bool dirSigns[3] =
+    bool dirSigns[4] =
     {
         invDir.m_x < 0.0f,
         invDir.m_y < 0.0f,
-        invDir.m_z < 0.0f
+        invDir.m_z < 0.0f,
+        invDir.m_w < 0.0f
     };
     
     // Maintain a list of nodes we need to examine, and the enter/exit distances
@@ -453,11 +457,12 @@ bool Bvh<T>::intersect(Intersection& intersection)
     
     // In order to find which child is "closer" along the ray we have to know
     // which direction the ray is going relative to each BVH node's spliting axis
-    bool dirSigns[3] =
+    bool dirSigns[4] =
     {
         invDir.m_x < 0.0f,
         invDir.m_y < 0.0f,
-        invDir.m_z < 0.0f
+        invDir.m_z < 0.0f,
+        invDir.m_w < 0.0f
     };
     
     // Maintain a list of nodes we need to examine, and the enter/exit distances
