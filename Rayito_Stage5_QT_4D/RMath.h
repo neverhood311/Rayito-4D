@@ -406,6 +406,7 @@ inline void makeCoordinateSpace(const Vector& normalRef,
                     Vector(1.0f, 0.0f, 0.0f, 0.0f);
     outXAxis = cross(v2, outZAxis).normalized();
     outYAxis = cross(outZAxis, outXAxis);
+    //TODO: modify this function for 4D
 }
 
 // Given a two directions, generate a coordinate space where the normal becomes
@@ -417,6 +418,7 @@ inline void makeCoordinateSpace(const Vector& normalRef, const Vector& tangent,
     outZAxis = normalRef.normalized();
     outYAxis = cross(tangent, outZAxis).normalized();
     outXAxis = cross(outZAxis, outYAxis);
+    //TODO: modify this function for 4D
 }
 
 // Transform a vector into the local space defined by X,Y,Z,W orthonormal axes
@@ -426,7 +428,7 @@ inline Vector transformToLocalSpace(const Vector& v,
     return Vector(dot(v, xAxis), dot(v, yAxis), dot(v, zAxis), dot(v, wAxis));
 }
 
-// Transform a vector out of the local space defined by X,Y,Z orthonormal axes
+// Transform a vector out of the local space defined by X,Y,Z,W orthonormal axes
 inline Vector transformFromLocalSpace(const Vector& v,
                                       const Vector& xAxis, const Vector& yAxis, const Vector& zAxis, const Vector& wAxis)
 {

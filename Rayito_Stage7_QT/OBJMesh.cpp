@@ -2,7 +2,7 @@
 #include <sstream>
 #include <iostream>
 
-#include <RMesh.h>
+#include "RMesh.h"
 
 
 namespace Rayito

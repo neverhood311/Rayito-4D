@@ -354,6 +354,16 @@ inline Vector uniformToHemisphere(float u1, float u2)
                   0.0f);
 }
 
+//Evenly distribute random points over a hyper-hemisphere
+inline Vector uniformToHyperHemisphere(float u1, float u2, float u3, float u4){
+    //for now, just create a vector from the four float values and normalize it
+    Vector result = Vector(u1, u2, u3, u4);
+    result.normalize();
+    return result;
+
+    //TODO: do some fancy thing so that it takes 3 values and uses those as angles
+}
+
 
 // Distribute points over a hemisphere, with more congregating at the pole
 inline Vector uniformToCosineHemisphere(float u1, float u2)

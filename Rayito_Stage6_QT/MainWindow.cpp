@@ -39,7 +39,7 @@ void MainWindow::on_renderButton_clicked()
     Rayito::DiffuseMaterial blueishLambert(Rayito::Color(0.7f, 0.7f, 0.9f));
     Rayito::DiffuseMaterial purplishLambert(Rayito::Color(0.8f, 0.3f, 0.7f));
     Rayito::DiffuseMaterial yellowishLambert(Rayito::Color(0.7f, 0.7f, 0.2f));
-    Rayito::GlossyMaterial bluishGlossy(Rayito::Color(0.5f, 0.3f, 0.8f), 0.3);
+    Rayito::GlossyMaterial bluishGlossy(Rayito::Color(0.5f, 0.3f, 0.8f), 0.3f);
     Rayito::GlossyMaterial greenishGlossy(Rayito::Color(0.3f, 0.9f, 0.3f), 0.1f);
     
     // The 'scene'

@@ -213,7 +213,7 @@ public:
     virtual ~Glossy() { }
     
     
-    // Note used yet, but it may be in the future (the standard A-S model has this)
+    // Not used yet, but it may be in the future (the standard A-S model has this)
     float schlickFresnel(float reflectionIncidentToNormal,
                          float cosTheta) const
     {

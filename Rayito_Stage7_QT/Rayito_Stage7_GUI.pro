@@ -30,4 +30,4 @@ HEADERS  += MainWindow.h \
 
 FORMS    += MainWindow.ui
 
-QMAKE_CXXFLAGS += -Wno-unused-parameter
+#QMAKE_CXXFLAGS += -Wno-unused-parameter
