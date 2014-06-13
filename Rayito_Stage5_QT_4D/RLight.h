@@ -88,7 +88,8 @@ public:
         Point worldRelativePoint = worldPoint - m_position;
         Point localPoint = Point(dot(worldRelativePoint, side1Norm),
                                  dot(worldRelativePoint, side2Norm),
-                                 0.0f);
+                                 0.0f,
+                                 0.0f);     //TODO: for 4D, too?
         
         // Do the actual range check
         if (localPoint.m_x < 0.0f || localPoint.m_x > side1Length ||
@@ -146,7 +147,8 @@ public:
         Point worldRelativePoint = worldPoint - m_position;
         Point localPoint = Point(dot(worldRelativePoint, side1Norm),
                                  dot(worldRelativePoint, side2Norm),
-                                 0.0f);
+                                 0.0f,
+                                 0.0f);     //TODO: for 4D, too?
         
         // Do the actual range check
         if (localPoint.m_x < 0.0f || localPoint.m_x > side1Length ||

@@ -32,12 +32,15 @@ struct Ray
 {
     Point m_origin;
     Vector m_direction;
+    Vector m_invDir;
     float m_tMax;
+    int m_sign[4];
     
     // Some sane defaults
     Ray()
         : m_origin(),
           m_direction(0.0f, 0.0f, 1.0f, 0.0f),
+          m_invDir(0.0f, 0.0f, 0.0f, 0.0f),
           m_tMax(kRayTMax)
     {
         
@@ -46,9 +49,11 @@ struct Ray
     Ray(const Ray& r)
         : m_origin(r.m_origin),
           m_direction(r.m_direction),
+          m_invDir(r.m_invDir),
           m_tMax(r.m_tMax)
     {
-        
+        for(int i = 0; i < 4; ++i)
+            m_sign[i] = r.m_sign[i];
     }
     
     Ray(const Point& origin, const Vector& direction, float tMax = kRayTMax)
@@ -56,13 +61,20 @@ struct Ray
           m_direction(direction),
           m_tMax(tMax)
     {
-        
+        m_invDir = 1.0f / m_direction;
+        m_sign[0] = (m_invDir.m_x < 0);
+        m_sign[1] = (m_invDir.m_y < 0);
+        m_sign[2] = (m_invDir.m_z < 0);
+        m_sign[3] = (m_invDir.m_w < 0);
     }
     
     Ray& operator =(const Ray& r)
     {
         m_origin = r.m_origin;
         m_direction = r.m_direction;
+        m_invDir = r.m_invDir;
+        for(int i = 0; i < 4; ++i)
+            m_sign[i] = r.m_sign[i];
         m_tMax = r.m_tMax;
         return *this;
     }

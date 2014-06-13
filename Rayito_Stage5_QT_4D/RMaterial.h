@@ -285,7 +285,8 @@ public:
         float sinTheta = std::sqrt(sin2Theta);
         Vector localHalf(sinTheta * std::cos(phi),
                          sinTheta * std::sin(phi),
-                         cosTheta);
+                         cosTheta,
+                         0.0f);     //TODO: figure out the vector in 4D
         // Transform half-vector to be based around the world-space normal
         Vector x, y, z, w;
         makeCoordinateSpace(normal, x, y, z, w);
@@ -308,7 +309,8 @@ public:
         float sinTheta = std::sqrt(sin2Theta);
         Vector localHalf(sinTheta * std::cos(phi),
                          sinTheta * std::sin(phi),
-                         cosTheta);
+                         cosTheta,
+                         0.0f);     //TODO: figure our the vector in 4D
         // Transform half-vector to be based around the world-space normal
         Vector x, y, z, w;
         makeCoordinateSpace(normal, x, y, z, w);

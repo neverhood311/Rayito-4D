@@ -389,10 +389,10 @@ public:
         // sample more efficiently within the cone
         float sinThetaMax2 = m_radius * m_radius / dist2;
         float cosThetaMax = std::sqrt(std::max(0.0f, 1.0f - sinThetaMax2));
-        Vector x, y, z;
-        makeCoordinateSpace(toCenter, x, y, z);
+        Vector x, y, z, w;
+        makeCoordinateSpace(toCenter, x, y, z, w);
         Vector localCone = uniformToCone(u1, u2, cosThetaMax);
-        Vector cone = transformFromLocalSpace(localCone, x, y, z).normalized();
+        Vector cone = transformFromLocalSpace(localCone, x, y, z, w).normalized();
         // Make sure the generated direction actually hits the sphere; if not, adjust
         Ray ray(refPosition, cone);
         Intersection isect(ray);
@@ -443,27 +443,116 @@ public:
           m_sideLength(sideLength),
           m_pMaterial(pMaterial)
     {
-
+        float half_side = sideLength / 2.0f;
+        extents[0] = Vector(-half_side, -half_side, -half_side, -half_side);
+        extents[1] = Vector(half_side, half_side, half_side, half_side);
     }
 
     virtual ~Tesseract(){}
 
     virtual bool intersect(Intersection& intersection){
         //TODO: implement the ray-tesseract intersection test
-        return false;
+        Ray localRay = intersection.m_ray;
+        //transform the ray into object space
+        localRay.m_origin -= m_position;
+        //some local copies for easier code
+        Point rayOrig = localRay.m_origin;
+        //Vector rayDir = localRay.m_direction;
+        Vector invDir = localRay.m_invDir;
+
+        float tmin, tmax, tymin, tymax, tzmin, tzmax, twmin, twmax;
+        //perform the intersection test
+        tmin = (extents[localRay.m_sign[0]].m_x - rayOrig.m_x) * invDir.m_x;
+        tmax = (extents[1 - localRay.m_sign[0]].m_x - rayOrig.m_x) * invDir.m_x;
+        tymin = (extents[localRay.m_sign[1]].m_y - rayOrig.m_y) * invDir.m_y;
+        tymax = (extents[1 - localRay.m_sign[1]].m_y - rayOrig.m_y) * invDir.m_y;
+        if(tmin > tymax || tymin > tmax)return false;
+        if(tymin > tmin)
+            tmin = tymin;
+        if(tymax < tmax)
+            tmax = tymax;
+        tzmin = (extents[localRay.m_sign[2]].m_z - rayOrig.m_z) * invDir.m_z;
+        tzmax = (extents[1 - localRay.m_sign[2]].m_z - rayOrig.m_z) * invDir.m_z;
+        if(tmin > tzmax || tzmin > tmax)return false;
+        if(tzmin > tmin)
+            tmin = tzmin;
+        if(tzmax < tmax)
+            tmax = tzmax;
+        twmin = (extents[localRay.m_sign[3]].m_w - rayOrig.m_w) * invDir.m_w;
+        twmax = (extents[1 - localRay.m_sign[3]].m_w - rayOrig.m_w) * invDir.m_w;
+        if ((tmin > twmax) || (twmin > tmax))return false;
+        if (twmin > tmin){
+            tmin = twmin;
+        }
+        if (twmax < tmax){
+            tmax = twmax;
+        }
+        if(tmax < 0)return false;   //the tesseract is behind the ray
+        if(tmax > kRayTMax || tmin < kRayTMin)return false;   //the intersection is too far away or too close
+
+        float _dist = (tmin >= 0)? tmin : tmax;
+        if(_dist < intersection.m_t)        //if this is the closest object so far
+            intersection.m_t = _dist;
+        else
+            return false;
+        //printf("we've been hit, captain!");
+        //Create our intersection data
+        Point localPos = localRay.calculate(intersection.m_t);
+        Vector worldNorm = localPos.normalized();
+
+        intersection.m_pShape = this;
+        intersection.m_pMaterial = m_pMaterial;
+        intersection.m_normal = worldNorm;
+        intersection.m_colorModifier = Color(1.0f, 1.0f, 1.0f);
+        return true;
     }
 
     virtual bool doesIntersect(const Ray &ray){
         //TODO: implement, once again, the ray-tesseract intersection test
-        return false;
-    }
+        Ray localRay = ray;
+        //transform the ray into object space
+        localRay.m_origin -= m_position;
+        //some local copies for easier code
+        Point rayOrig = localRay.m_origin;
+        //Vector rayDir = localRay.m_direction;
+        Vector invDir = localRay.m_invDir;
 
-    virtual BBox bbox(){
-        return BBox();  //TODO: Get the bounding box
+        float tmin, tmax, tymin, tymax, tzmin, tzmax, twmin, twmax;
+        //perform the intersection test
+        tmin = (extents[localRay.m_sign[0]].m_x - rayOrig.m_x) * invDir.m_x;
+        tmax = (extents[1 - localRay.m_sign[0]].m_x - rayOrig.m_x) * invDir.m_x;
+        tymin = (extents[localRay.m_sign[1]].m_y - rayOrig.m_y) * invDir.m_y;
+        tymax = (extents[1 - localRay.m_sign[1]].m_y - rayOrig.m_y) * invDir.m_y;
+        if(tmin > tymax || tymin > tmax)return false;
+        if(tymin > tmin)
+            tmin = tymin;
+        if(tymax < tmax)
+            tmax = tymax;
+        tzmin = (extents[localRay.m_sign[2]].m_z - rayOrig.m_z) * invDir.m_z;
+        tzmax = (extents[1 - localRay.m_sign[2]].m_z - rayOrig.m_z) * invDir.m_z;
+        if(tmin > tzmax || tzmin > tmax)return false;
+        if(tzmin > tmin)
+            tmin = tzmin;
+        if(tzmax < tmax)
+            tmax = tzmax;
+        twmin = (extents[localRay.m_sign[3]].m_w - rayOrig.m_w) * invDir.m_w;
+        twmax = (extents[1 - localRay.m_sign[3]].m_w - rayOrig.m_w) * invDir.m_w;
+        if ((tmin > twmax) || (twmin > tmax))return false;
+        if (twmin > tmin){
+            tmin = twmin;
+        }
+        if (twmax < tmax){
+            tmax = twmax;
+        }
+        if(tmax < 0)return false;   //the tesseract is behind the ray
+        if(tmax > kRayTMax || tmin < kRayTMin)return false;   //the intersection is too far away or too close
+
+        //float _dist = (tmin >= 0)? tmin : tmax;
+        return true;
     }
 
     virtual float pdfSA(const Point &refPosition, const Vector &refNormal, const Point &surfPosition, const Vector &surfNormal) const{
-
+        return 0.5f;
     }
 
     virtual float surfaceAreaPdf() const{
@@ -476,6 +565,7 @@ protected:
     Point m_position;
     float m_sideLength;
     Material *m_pMaterial;
+    Vector extents[2];      //the min and max bounds of the tesseract in OBJECT space
 };
 
 } // namespace Rayito

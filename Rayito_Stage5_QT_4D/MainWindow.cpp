@@ -45,54 +45,59 @@ void MainWindow::on_renderButton_clicked()
     Rayito::ShapeSet masterSet;
     
     // Put a ground plane in (with bullseye texture!)
-    Rayito::Plane plane(Rayito::Point(0.0f, -2.0f, 0.0f),
-                        Rayito::Vector(0.0f, 1.0f, 0.0f),
+    Rayito::Plane plane(Rayito::Point(0.0f, -2.0f, 0.0f, 0.0f),
+                        Rayito::Vector(0.0f, 1.0f, 0.0f, 0.0f),
                         &blueishLambert,
                         true); // Last parameter is whether to do the bullseye texture or not
     masterSet.addShape(&plane);
     
     // Add a pile-o-spheres with a few interesting materials
     
-    Rayito::Sphere sphere1(Rayito::Point(3.0f, -1.0f, 0.0f),
+    Rayito::Sphere sphere1(Rayito::Point(3.0f, -1.0f, 0.0f, 0.0f),
                            1.0f,
                            &purplishLambert);
     masterSet.addShape(&sphere1);
     
-    Rayito::Sphere sphere2(Rayito::Point(-3.0f, 0.0f, -2.0f),
+    Rayito::Sphere sphere2(Rayito::Point(-3.0f, 0.0f, -2.0f, 0.0f),
                            2.0f,
                            &greenishGlossy);
     masterSet.addShape(&sphere2);
     
-    Rayito::Sphere sphere3(Rayito::Point(1.5f, -1.5f, 2.5f),
+    Rayito::Sphere sphere3(Rayito::Point(1.5f, -1.5f, 2.5f, 0.0f),
                            0.5f,
                            &bluishGlossy);
-    masterSet.addShape(&sphere3);
+    //masterSet.addShape(&sphere3);
     
-    Rayito::Sphere sphere4(Rayito::Point(-2.0f, -1.5f, 1.0f),
+    Rayito::Sphere sphere4(Rayito::Point(-2.0f, -1.5f, 1.0f, 0.0f),
                            0.5f,
                            &yellowishLambert);
-    masterSet.addShape(&sphere4);
+    //masterSet.addShape(&sphere4);
+
+    Rayito::Tesseract hypercube(Rayito::Point(0, 0.0f, 0, 0.0f),
+                      2.0f,
+                      &yellowishLambert);
+    masterSet.addShape(&hypercube);
     
     // Add an area light
-    Rayito::RectangleLight areaLight(Rayito::Point(-1.5f, 4.0f, -1.5f),
-                                     Rayito::Vector(3.0f, 0.0f, 0.0f),
-                                     Rayito::Vector(0.0f, 0.0f, 3.0f),
+    Rayito::RectangleLight areaLight(Rayito::Point(-1.5f, 4.0f, -1.5f, 0.0f),
+                                     Rayito::Vector(3.0f, 0.0f, 0.0f, 0.0f),
+                                     Rayito::Vector(0.0f, 0.0f, 3.0f, 0.0f),
                                      Rayito::Color(1.0f, 1.0f, 1.0f),
                                      5.0f);
     masterSet.addShape(&areaLight);
 
     // Add an area light based on a shape (a sphere)
-    Rayito::Sphere sphereForLight(Rayito::Point(0.0f, 0.5f, 2.0f),
+    Rayito::Sphere sphereForLight(Rayito::Point(0.0f, 0.5f, 2.0f, 0.0f),
                                   0.5f,
                                   &blueishLambert);
     Rayito::ShapeLight sphereLight(&sphereForLight, Rayito::Color(1.0f, 1.0f, 0.3f), 10.0f);
-    masterSet.addShape(&sphereLight);
+    //masterSet.addShape(&sphereLight);
     
     // Create the camera based on user settings
     Rayito::PerspectiveCamera cam((float)ui->camFovSpinBox->value(),
-                                  Rayito::Point(0.0f, 5.0f, 15.0f),
-                                  Rayito::Point(0.0f, 0.0f, 0.0f),
-                                  Rayito::Point(0.0f, 1.0f, 0.0f),
+                                  Rayito::Point(0.0f, 5.0f, 15.0f, 0.0f),
+                                  Rayito::Point(0.0f, 0.0f, 0.0f, 0.0f),
+                                  Rayito::Point(0.0f, 1.0f, 0.0f, 0.0f),
                                   (float)ui->focalDistanceSpinBox->value(),
                                   (float)ui->lensRadiusSpinBox->value());
     

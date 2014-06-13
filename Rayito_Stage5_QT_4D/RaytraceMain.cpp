@@ -182,6 +182,12 @@ Ray PerspectiveCamera::makeRay(float xScreen, float yScreen, float lensU, float 
                       m_right * ((xScreen - 0.5f) * m_tanFov) +
                       m_up * ((yScreen - 0.5f) * m_tanFov);
     ray.m_direction.normalize();
+    //get the inverse direction and signs
+    ray.m_invDir = 1.0f / ray.m_direction;
+    ray.m_sign[0] = (ray.m_invDir.m_x < 0);
+    ray.m_sign[1] = (ray.m_invDir.m_y < 0);
+    ray.m_sign[2] = (ray.m_invDir.m_z < 0);
+    ray.m_sign[3] = (ray.m_invDir.m_w < 0);
     
     if (m_lensRadius > 0)
     {
@@ -197,7 +203,8 @@ Ray PerspectiveCamera::makeRay(float xScreen, float yScreen, float lensU, float 
         // Compute local direction rays for computing focal parameters
         Vector localRayDirection((xScreen - 0.5f) * m_tanFov,
                                  (yScreen - 0.5f) * m_tanFov,
-                                 1.0f);
+                                 1.0f,
+                                 0.0f);     //TODO: create this ray in 4D
         localRayDirection.normalize();
 
         // Compute primary ray focal plane intersection
