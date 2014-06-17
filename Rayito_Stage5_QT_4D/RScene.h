@@ -451,7 +451,7 @@ public:
     virtual ~Tesseract(){}
 
     virtual bool intersect(Intersection& intersection){
-        //TODO: implement the ray-tesseract intersection test
+        //implement the ray-tesseract intersection test
         Ray localRay = intersection.m_ray;
         //transform the ray into object space
         localRay.m_origin -= m_position;
@@ -498,7 +498,10 @@ public:
         //printf("we've been hit, captain!");
         //Create our intersection data
         Point localPos = localRay.calculate(intersection.m_t);
-        Vector worldNorm = localPos.normalized();
+
+
+        Vector worldNorm = Vector(0, 0, 0, 0);
+        worldNorm.set(localPos.maxIdx(), 1);
 
         intersection.m_pShape = this;
         intersection.m_pMaterial = m_pMaterial;
@@ -508,7 +511,7 @@ public:
     }
 
     virtual bool doesIntersect(const Ray &ray){
-        //TODO: implement, once again, the ray-tesseract intersection test
+        //implement, once again, the ray-tesseract intersection test
         Ray localRay = ray;
         //transform the ray into object space
         localRay.m_origin -= m_position;

@@ -32,6 +32,28 @@ void MainWindow::on_actionQuit_triggered()
 
 void MainWindow::on_renderButton_clicked()
 {
+    //Test the matrix math
+    float floatArr[5][5] = {{5, 4, 3, 2, 1},  //x
+                            {0, 4, 0, 0, 0},  //y
+                            {0, 0, 3, 0, 0},  //z
+                            {0, 0, 0, 2, 0},  //w
+                            {0, 0, 0, 0, 1}};
+    Rayito::Mat5 newMat;
+    newMat.printMat();
+    newMat = Rayito::Mat5(floatArr);
+    newMat.printMat();
+    float floatArr2[5][5] = {{1, 0, 0, 0, 0},  //x
+                            {0, 1, 0, 0, 0},  //y
+                            {0, 0, 1, 0, 0},  //z
+                            {0, 0, 0, 1, 0},  //w
+                            {15, 14, 13, 12, 11}};
+    Rayito::Mat5 mat2 = Rayito::Mat5(floatArr2);
+    newMat *= mat2;
+    mat2.printMat();
+    newMat.printMat();
+    return;
+
+
     // Make a picture...
     
     // Available materials
@@ -39,7 +61,7 @@ void MainWindow::on_renderButton_clicked()
     Rayito::DiffuseMaterial purplishLambert(Rayito::Color(0.8f, 0.3f, 0.7f));
     Rayito::DiffuseMaterial yellowishLambert(Rayito::Color(0.7f, 0.7f, 0.2f));
     Rayito::GlossyMaterial bluishGlossy(Rayito::Color(0.5f, 0.3f, 0.8f), 0.3);
-    Rayito::GlossyMaterial greenishGlossy(Rayito::Color(0.3f, 0.9f, 0.3f), 0.1f);
+    Rayito::GlossyMaterial greenishGlossy(Rayito::Color(0.3f, 0.9f, 0.3f), 0.0001f);
     
     // The 'scene'
     Rayito::ShapeSet masterSet;
