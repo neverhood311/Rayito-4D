@@ -163,6 +163,70 @@ inline Color operator /(const Color& c, float f)
                  c.m_b / f);
 }
 
+//  Mat5 class and associated functions
+
+struct Mat5{
+    float m_mat[5][5];    //[column][row]
+    Mat5(){
+        for(int i = 0; i < 5; ++i){
+            for(int j = 0; j < 5; ++j){
+                m_mat[i][j] = 0;
+                if(i == j)
+                    m_mat[i][j] = 1;  //identity matrix
+            }
+        }
+    }
+
+    Mat5(float mat[5][5]){
+        for(int c = 0; c < 5; ++c){
+            for(int r = 0; r < 5; ++r){
+                m_mat[c][r] = mat[c][r];
+            }
+        }
+    }
+    Mat5(const Mat5& mat){
+        for(int c = 0; c < 5; ++c){
+            for(int r = 0; r < 5; ++r){
+                m_mat[c][r] = mat.m_mat[c][r];
+            }
+        }
+    }
+
+    Mat5& operator =(const Mat5& m){
+        for(int c = 0; c < 5; ++c){
+            for(int r = 0; r < 5; ++r){
+                m_mat[c][r] = m.m_mat[c][r];
+            }
+        }
+        return *this;
+    }
+
+    Mat5& operator *=(const Mat5& m){
+        float result[5][5];
+        for(int c = 0; c < 5; ++c){
+            for(int r = 0; r < 5; ++r){
+                result[c][r] = 0;
+                for(int i = 0; i < 5; ++i){
+                    result[c][r] += m_mat[i][r] * m.m_mat[c][i];
+                }
+            }
+        }
+        for(int c = 0; c < 5; ++c){
+            for(int r = 0; r < 5; ++r){
+                m_mat[c][r] = result[c][r];
+            }
+        }
+        return *this;
+    }
+
+    void printMat(){
+        for(int r = 0; r < 5; ++r){
+            printf("|%f, %f, %f, %f, %f|\n", m_mat[0][r], m_mat[1][r], m_mat[2][r], m_mat[3][r], m_mat[4][r]);
+        }
+        printf("\n");
+    }
+};
+
 
 //
 // 4D vector class (and associated operations)
@@ -314,6 +378,45 @@ struct Vector
         }
         return result;
     }
+
+    inline int absMaxIdx(){ //return the index of the element with the largest absolute value
+        int result = 0;
+        float maxVal = abs(m_x);
+        if(abs(m_y) > maxVal){
+            result = 1;
+            maxVal = abs(m_y);
+        }
+        if(abs(m_z) > maxVal){
+            result = 2;
+            maxVal = abs(m_z);
+        }
+        if(abs(m_w) > maxVal){
+            result = 3;
+        }
+        return result;
+    }
+
+    void printVec(){
+        printf("(%f, %f, %f, %f)\n", m_x, m_y, m_z, m_w);
+    }
+
+    void mmult(Mat5& m, bool isPoint){ //multiply a column-major matrix by a Vector
+        float res[5];
+        float v[5] = {m_x, m_y, m_z, m_w, 0};
+        if(isPoint)v[4] = 1;
+
+        for(int r = 0; r < 5; ++r){
+            res[r] = 0;
+            for(int c = 0; c < 5; ++c){
+                res[r] += m.m_mat[c][r] * v[c];
+            }
+        }
+
+        m_x = res[0];
+        m_y = res[1];
+        m_z = res[2];
+        m_w = res[3];
+    }
 };
 
 inline Vector operator +(const Vector& v1, const Vector& v2)
@@ -359,7 +462,6 @@ inline Vector operator *(float f, const Vector& v)
                   f * v.m_z,
                   f * v.m_w);
 }
-
 
 inline Vector operator /(const Vector& v1, const Vector& v2)
 {
@@ -489,79 +591,6 @@ inline Vector transformFromLocalSpace(const Vector& v,
 
 
 
-struct Mat5{
-    float m_mat[5][5];    //[column][row]
-    Mat5(){
-        for(int i = 0; i < 5; ++i){
-            for(int j = 0; j < 5; ++j){
-                m_mat[i][j] = 0;
-                if(i == j)
-                    m_mat[i][j] = 1;  //identity matrix
-            }
-        }
-    }
-
-    Mat5(float mat[5][5]){
-        for(int c = 0; c < 5; ++c){
-            for(int r = 0; r < 5; ++r){
-                m_mat[c][r] = mat[c][r];
-            }
-        }
-    }
-    Mat5(const Mat5& mat){
-        for(int c = 0; c < 5; ++c){
-            for(int r = 0; r < 5; ++r){
-                m_mat[c][r] = mat.m_mat[c][r];
-            }
-        }
-    }
-
-    Mat5& operator =(const Mat5& m){
-        for(int c = 0; c < 5; ++c){
-            for(int r = 0; r < 5; ++r){
-                m_mat[c][r] = m.m_mat[c][r];
-            }
-        }
-        return *this;
-    }
-
-    Mat5& operator *=(const Mat5& m){
-        float result[5][5];
-        for(int c = 0; c < 5; ++c){
-            for(int r = 0; r < 5; ++r){
-                result[c][r] = 0;
-                for(int i = 0; i < 5; ++i){
-                    result[c][r] += m_mat[i][r] * m.m_mat[c][i];
-                }
-            }
-        }
-        for(int c = 0; c < 5; ++c){
-            for(int r = 0; r < 5; ++r){
-                m_mat[c][r] = result[c][r];
-            }
-        }
-        return *this;
-    }
-
-    void printMat(){
-        for(int r = 0; r < 5; ++r){
-            printf("|%f, %f, %f, %f, %f|\n", m_mat[0][r], m_mat[1][r], m_mat[2][r], m_mat[3][r], m_mat[4][r]);
-        }
-        printf("\n");
-    }
-};
-
-/*Vector operator *(const Mat5& m, const Vector& v){ //multiply a column-major matrix by a Vector
-    float res[5];
-    for(int r = 0; r < 5; ++r){
-        res[r] = 0;
-        for(int c = 0; c < 5; ++c){
-            res[r] += m.m_mat[c][r] * v[r];
-        }
-    }
-    return Vector(res[0], res[1], res[2], res[3]);
-}*/
-
 struct Rotate4{
     float m_xy, m_xz, m_xw, m_yz, m_yw, m_zw;
 
@@ -577,19 +606,25 @@ struct Transform4D{
     Point m_translate;
     float m_xy, m_xz, m_xw, m_yz, m_yw, m_zw;   //the rotations
 
-    Transform4D(){}
-
-    void rotate(float xy, float xz, float xw, float yz, float yw, float zw){
-        m_xy = xy;
-        m_xz = xz;
-        m_xw = xw;
-        m_yz = yz;
-        m_yw = yw;
-        m_zw = zw;
+    Transform4D(){
+        m_matrix = Mat5();
+        m_invMatrix = Mat5();
     }
 
-    void translate(Point& t){
+    void rotate(float xy, float xz, float xw, float yz, float yw, float zw){
+        float pi_180 = M_PI / 180.0f;
+        m_xy = xy * pi_180;
+        m_xz = xz * pi_180;
+        m_xw = xw * pi_180;
+        m_yz = yz * pi_180;
+        m_yw = yw * pi_180;
+        m_zw = zw * pi_180;
+        calcMatrices();
+    }
+
+    void translate(const Point& t){
         m_translate = t;
+        calcMatrices();
     }
 
     //this needs to be called before trying to transform Points and Vectors
@@ -601,9 +636,10 @@ struct Transform4D{
                           {0, 0, 1, 0, 0},  //z
                           {0, 0, 0, 1, 0},  //w
                           {0, 0, 0, 0, 1}};*/
-
+        //printf("Start composing the transformation matrix.\n");
         //get an identity matrix
         m_matrix = Mat5();
+        //m_matrix.printMat();
         //multiply it by all of the rotation matrices
         //zw
         float zw[5][5] = {{1, 0, 0, 0, 0},
@@ -612,14 +648,16 @@ struct Transform4D{
                           {0, 0, -sin(m_zw), cos(m_zw), 0},
                           {0, 0, 0, 0, 1}};
         m_matrix *= Mat5(zw);
+        //m_matrix.printMat();
         //yw
         //                    y     w
         float yw[5][5] = {{1, 0, 0, 0, 0},
-                          {0, cos(m_yw), 0, -sin(m_yw), 0},  //y
+                          {0, cos(m_yw), 0, sin(m_yw), 0},  //y
                           {0, 0, 1, 0, 0},
-                          {0, sin(m_yw), 0, cos(m_yw), 0},  //w
+                          {0, -sin(m_yw), 0, cos(m_yw), 0},  //w
                           {0, 0, 0, 0, 1}};
         m_matrix *= Mat5(yw);
+        //m_matrix.printMat();
         //yz
         //                    y  z
         float yz[5][5] = {{1, 0, 0, 0, 0},
@@ -628,6 +666,7 @@ struct Transform4D{
                           {0, 0, 0, 1, 0},
                           {0, 0, 0, 0, 1}};
         m_matrix *= Mat5(yz);
+        //m_matrix.printMat();
         //xw
         //                 x        w
         float xw[5][5] = {{cos(m_xw), 0, 0, sin(m_xw), 0},  //x
@@ -636,14 +675,16 @@ struct Transform4D{
                           {-sin(m_xw), 0, 0, cos(m_xw), 0},  //w
                           {0, 0, 0, 0, 1}};
         m_matrix *= Mat5(xw);
+        //m_matrix.printMat();
         //xz
         //                 x     z
-        float xz[5][5] = {{cos(m_xz), 0, sin(m_xz), 0, 0},  //x
+        float xz[5][5] = {{cos(m_xz), 0, -sin(m_xz), 0, 0},  //x
                           {0, 1, 0, 0, 0},
-                          {-sin(m_xz), 0, cos(m_xz), 0, 0},  //z
+                          {sin(m_xz), 0, cos(m_xz), 0, 0},  //z
                           {0, 0, 0, 1, 0},
                           {0, 0, 0, 0, 1}};
         m_matrix *= Mat5(xz);
+        //m_matrix.printMat();
         //xy
         //                 x  y
         float xy[5][5] = {{cos(m_xy), sin(m_xy), 0, 0, 0},  //x
@@ -652,17 +693,73 @@ struct Transform4D{
                           {0, 0, 0, 1, 0},
                           {0, 0, 0, 0, 1}};
         m_matrix *= Mat5(xy);
+        //m_matrix.printMat();
         //multiply it by the translation matrix
         float trans[5][5] = {{1, 0, 0, 0, 0},
                             {0, 1, 0, 0, 0},
                             {0, 0, 1, 0, 0},
                             {0, 0, 0, 1, 0},
-                            {m_translate.m_x, m_translate.m_y, m_translate.m_z, m_translate.m_w, 1}};
+                            {-m_translate.m_x, -m_translate.m_y, -m_translate.m_z, -m_translate.m_w, 1}};
         m_matrix *= Mat5(trans);
+        //m_matrix.printMat();
 
         //get an identity matrix
+        m_invMatrix = Mat5();
         //multiply it by the inverse translation matrix
+        float invtrans[5][5] = {{1, 0, 0, 0, 0},
+                            {0, 1, 0, 0, 0},
+                            {0, 0, 1, 0, 0},
+                            {0, 0, 0, 1, 0},
+                            {m_translate.m_x, m_translate.m_y, m_translate.m_z, m_translate.m_w, 1}};
+        m_invMatrix *= Mat5(invtrans);
         //multiply it by all of the inverse rotation matrices
+        //xy
+        //                 x  y
+        float xy2[5][5] = {{cos(m_xy), -sin(m_xy), 0, 0, 0},  //x
+                          {sin(m_xy), cos(m_xy), 0, 0, 0},  //y
+                          {0, 0, 1, 0, 0},
+                          {0, 0, 0, 1, 0},
+                          {0, 0, 0, 0, 1}};
+        m_invMatrix *= Mat5(xy2);
+        //xz
+        //                 x     z
+        float xz2[5][5] = {{cos(m_xz), 0, -sin(m_xz), 0, 0},  //x
+                          {0, 1, 0, 0, 0},
+                          {sin(m_xz), 0, cos(m_xz), 0, 0},  //z
+                          {0, 0, 0, 1, 0},
+                          {0, 0, 0, 0, 1}};
+        m_invMatrix *= Mat5(xz2);
+        //xw
+        //                 x        w
+        float xw2[5][5] = {{cos(m_xw), 0, 0, -sin(m_xw), 0},  //x
+                          {0, 1, 0, 0, 0},
+                          {0, 0, 1, 0, 0},
+                          {sin(m_xw), 0, 0, cos(m_xw), 0},  //w
+                          {0, 0, 0, 0, 1}};
+        m_invMatrix *= Mat5(xw2);
+        //yz
+        //                    y  z
+        float yz2[5][5] = {{1, 0, 0, 0, 0},
+                          {0, cos(m_yz), -sin(m_yz), 0, 0},  //y
+                          {0, sin(m_yz), cos(m_yz), 0, 0},  //z
+                          {0, 0, 0, 1, 0},
+                          {0, 0, 0, 0, 1}};
+        m_invMatrix *= Mat5(yz2);
+        //yw
+        //                    y     w
+        float yw2[5][5] = {{1, 0, 0, 0, 0},
+                          {0, cos(m_yw), 0, -sin(m_yw), 0},  //y
+                          {0, 0, 1, 0, 0},
+                          {0, sin(m_yw), 0, cos(m_yw), 0},  //w
+                          {0, 0, 0, 0, 1}};
+        m_invMatrix *= Mat5(yw2);
+        //zw
+        float zw2[5][5] = {{1, 0, 0, 0, 0},
+                          {0, 1, 0, 0, 0},
+                          {0, 0, cos(m_zw), -sin(m_zw), 0},
+                          {0, 0, sin(m_zw), cos(m_zw), 0},
+                          {0, 0, 0, 0, 1}};
+        m_invMatrix *= Mat5(zw2);
     }
 };
 

@@ -446,6 +446,7 @@ public:
         float half_side = sideLength / 2.0f;
         extents[0] = Vector(-half_side, -half_side, -half_side, -half_side);
         extents[1] = Vector(half_side, half_side, half_side, half_side);
+        m_transform.translate(position);
     }
 
     virtual ~Tesseract(){}
@@ -454,7 +455,7 @@ public:
         //implement the ray-tesseract intersection test
         Ray localRay = intersection.m_ray;
         //transform the ray into object space
-        localRay.m_origin -= m_position;
+        localRay.transform(m_transform.m_matrix);
         //some local copies for easier code
         Point rayOrig = localRay.m_origin;
         //Vector rayDir = localRay.m_direction;
@@ -499,9 +500,14 @@ public:
         //Create our intersection data
         Point localPos = localRay.calculate(intersection.m_t);
 
-
         Vector worldNorm = Vector(0, 0, 0, 0);
-        worldNorm.set(localPos.maxIdx(), 1);
+        int maxIdx = localPos.absMaxIdx();
+        if(localPos[maxIdx] >= 0)
+            worldNorm.set(maxIdx, 1);
+        else
+            worldNorm.set(maxIdx, -1);
+        //transform the normal back into world space
+        worldNorm.mmult(m_transform.m_invMatrix, false);
 
         intersection.m_pShape = this;
         intersection.m_pMaterial = m_pMaterial;
@@ -514,7 +520,7 @@ public:
         //implement, once again, the ray-tesseract intersection test
         Ray localRay = ray;
         //transform the ray into object space
-        localRay.m_origin -= m_position;
+        localRay.transform(m_transform.m_matrix);
         //some local copies for easier code
         Point rayOrig = localRay.m_origin;
         //Vector rayDir = localRay.m_direction;
@@ -564,6 +570,7 @@ public:
 
     virtual bool infiniteExtent() const{ return false; }
 
+    Transform4D m_transform;
 protected:
     Point m_position;
     float m_sideLength;

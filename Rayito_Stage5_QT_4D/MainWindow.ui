@@ -265,7 +265,7 @@
      <x>0</x>
      <y>0</y>
      <width>700</width>
-     <height>19</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -273,6 +273,7 @@
      <string>File</string>
     </property>
     <addaction name="actionQuit"/>
+    <addaction name="actionSave_as"/>
    </widget>
    <widget class="QMenu" name="menuRender">
     <property name="title">
@@ -306,6 +307,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="actionSave_as">
+   <property name="text">
+    <string>Save as...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
    </property>
   </action>
  </widget>

@@ -4,7 +4,8 @@
 #include "rayito.h"
 
 #include <QGraphicsScene>
-
+#include <QFileDialog>
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *pParent)
     : QMainWindow(pParent), ui(new Ui::MainWindow)
@@ -32,6 +33,7 @@ void MainWindow::on_actionQuit_triggered()
 
 void MainWindow::on_renderButton_clicked()
 {
+    /*
     //Test the matrix math
     float floatArr[5][5] = {{5, 4, 3, 2, 1},  //x
                             {0, 4, 0, 0, 0},  //y
@@ -42,6 +44,12 @@ void MainWindow::on_renderButton_clicked()
     newMat.printMat();
     newMat = Rayito::Mat5(floatArr);
     newMat.printMat();
+
+    Rayito::Vector vec = Rayito::Vector(1.2f, 1.4f, 1.6f, 1.8f);
+    vec.printVec();
+    vec.mmult(newMat, true);
+    vec.printVec();
+
     float floatArr2[5][5] = {{1, 0, 0, 0, 0},  //x
                             {0, 1, 0, 0, 0},  //y
                             {0, 0, 1, 0, 0},  //z
@@ -51,7 +59,9 @@ void MainWindow::on_renderButton_clicked()
     newMat *= mat2;
     mat2.printMat();
     newMat.printMat();
-    return;
+
+
+    //return;*/
 
 
     // Make a picture...
@@ -95,9 +105,10 @@ void MainWindow::on_renderButton_clicked()
                            &yellowishLambert);
     //masterSet.addShape(&sphere4);
 
-    Rayito::Tesseract hypercube(Rayito::Point(0, 0.0f, 0, 0.0f),
+    Rayito::Tesseract hypercube(Rayito::Point(0.0f, 0.0f, 0.0f, 0.0f),
                       2.0f,
                       &yellowishLambert);
+    hypercube.m_transform.rotate(0, -45, 0, 0, -15, 35);//xy, xz, xw, yz, yw, zw
     masterSet.addShape(&hypercube);
     
     // Add an area light
@@ -190,4 +201,12 @@ void MainWindow::on_renderButton_clicked()
 void MainWindow::on_actionRender_Scene_triggered()
 {
    
+}
+
+void MainWindow::on_actionSave_as_triggered(){
+    //QString filename = QFileDialog::getOpenFileName(this, tr("Save Image"), "", "All files(*.*);;XML Files (*.xml)");
+    QString filename = QFileDialog::getSaveFileName(this, tr("Save Image"), "untitled.png", "PNG Image (*.png)");
+    QMessageBox::information(this, tr("File Name"), filename);
+    printf(filename.toLocal8Bit().constData());
+    //save the image to this filepath
 }

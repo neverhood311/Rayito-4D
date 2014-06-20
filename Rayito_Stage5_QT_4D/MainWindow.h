@@ -23,6 +23,8 @@ private slots:
    void on_renderButton_clicked();
    
    void on_actionRender_Scene_triggered();
+
+   void on_actionSave_as_triggered();
    
 private:
    Ui::MainWindow *ui;

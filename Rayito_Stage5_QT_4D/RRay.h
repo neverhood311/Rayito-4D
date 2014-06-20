@@ -61,11 +61,7 @@ struct Ray
           m_direction(direction),
           m_tMax(tMax)
     {
-        m_invDir = 1.0f / m_direction;
-        m_sign[0] = (m_invDir.m_x < 0);
-        m_sign[1] = (m_invDir.m_y < 0);
-        m_sign[2] = (m_invDir.m_z < 0);
-        m_sign[3] = (m_invDir.m_w < 0);
+        updateInvDir();
     }
     
     Ray& operator =(const Ray& r)
@@ -79,6 +75,20 @@ struct Ray
         return *this;
     }
     
+    void transform(Mat5& m){
+        m_origin.mmult(m, true);
+        m_direction.mmult(m, false);
+        updateInvDir();
+    }
+
+    void updateInvDir(){
+        m_invDir = 1.0f / m_direction;
+        m_sign[0] = (m_invDir.m_x < 0);
+        m_sign[1] = (m_invDir.m_y < 0);
+        m_sign[2] = (m_invDir.m_z < 0);
+        m_sign[3] = (m_invDir.m_w < 0);
+    }
+
     Point calculate(float t) const { return m_origin + t * m_direction; }
 };
 
