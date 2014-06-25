@@ -1,6 +1,11 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+
+#include <vector>
+#include <string>
+#include "rayito.h"
+#include "lodepng.h"
 #include <QMainWindow>
 
 
@@ -28,6 +33,8 @@ private slots:
    
 private:
    Ui::MainWindow *ui;
+
+   Rayito::Image *pImage;   //pointer to the image
 };
 
 

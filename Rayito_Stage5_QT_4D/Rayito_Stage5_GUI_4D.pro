@@ -14,7 +14,8 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         MainWindow.cpp \
-    RaytraceMain.cpp
+    RaytraceMain.cpp \
+    lodepng.cpp
 
 HEADERS  += MainWindow.h \
     rayito.h \
@@ -23,7 +24,8 @@ HEADERS  += MainWindow.h \
     RMaterial.h \
     RLight.h \
     RScene.h \
-    RSampling.h
+    RSampling.h \
+    lodepng.h
 
 FORMS    += MainWindow.ui
 
