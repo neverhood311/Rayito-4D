@@ -111,7 +111,8 @@ Image* raytrace(ShapeSet& scene,
                 size_t height,
                 size_t pixelSamplesHint,
                 size_t lightSamplesHint,
-                size_t maxRayDepth);
+                size_t maxRayDepth,
+                int frame);
 
 
 } // namespace Rayito

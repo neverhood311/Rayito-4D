@@ -627,6 +627,10 @@ struct Transform4D{
         calcMatrices();
     }
 
+    void translate(float x, float y, float z, float w){
+        translate(Point(x, y, z, w));
+    }
+
     //this needs to be called before trying to transform Points and Vectors
     void calcMatrices(){    //perform all of the matrix multiplication to generate the m_matrix and m_invMatrix
 

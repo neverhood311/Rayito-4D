@@ -25,7 +25,8 @@ HEADERS  += MainWindow.h \
     RLight.h \
     RScene.h \
     RSampling.h \
-    lodepng.h
+    lodepng.h \
+    logger.h
 
 FORMS    += MainWindow.ui
 

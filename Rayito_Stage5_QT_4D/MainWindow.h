@@ -5,7 +5,10 @@
 #include <vector>
 #include <string>
 #include "rayito.h"
-#include "lodepng.h"
+#include "lodepng.h"    //for saving to .PNG files
+#include <fstream>      //for writing to the log file
+#include <iostream>     //ditto
+#include <time.h>       //ditto
 #include <QMainWindow>
 
 
@@ -30,6 +33,8 @@ private slots:
    void on_actionRender_Scene_triggered();
 
    void on_actionSave_as_triggered();
+
+   void on_actionLoad_triggered();
    
 private:
    Ui::MainWindow *ui;

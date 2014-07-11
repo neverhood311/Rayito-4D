@@ -41,11 +41,12 @@ public:
                  const Camera& cam,
                  std::list<Shape*>& lights,
                  size_t pixelSamplesHint, size_t lightSamplesHint,
-                 size_t maxRayDepth)
+                 size_t maxRayDepth,
+                 int frame)
         : m_xstart(xstart), m_xend(xend), m_ystart(ystart), m_yend(yend),
           m_pImage(pImage), m_masterSet(masterSet), m_camera(cam), m_lights(lights),
           m_pixelSamplesHint(pixelSamplesHint), m_lightSamplesHint(lightSamplesHint),
-          m_maxRayDepth(maxRayDepth) { }
+          m_maxRayDepth(maxRayDepth), m_frame(frame) { }
     
 protected:
     virtual void run()
@@ -53,8 +54,8 @@ protected:
         // Random number generator (for random pixel positions, light positions, etc)
         // We seed the generator for this render thread based on something that
         // doesn't change, but gives us a good variable seed for each thread.
-        Rng rng(static_cast<unsigned int>(((m_xstart << 16) | m_xend) ^ m_xstart),
-                static_cast<unsigned int>(((m_ystart << 16) | m_yend) ^ m_ystart));
+        Rng rng(static_cast<unsigned int>(((m_xstart << 16) | m_xend) ^ m_xstart ^ (m_frame << 8)),
+                static_cast<unsigned int>(((m_ystart << 16) | m_yend) ^ m_ystart ^ (m_frame << 4)));
         
         // The aspect ratio is used to make the image only get more zoomed in when
         // the height changes (and not the width)
@@ -144,6 +145,7 @@ protected:
     std::list<Shape*>& m_lights;
     size_t m_pixelSamplesHint, m_lightSamplesHint;
     size_t m_maxRayDepth;
+    int m_frame;
 };
 
 
@@ -436,7 +438,8 @@ Image* raytrace(ShapeSet& scene,
                 size_t height,
                 size_t pixelSamplesHint,
                 size_t lightSamplesHint,
-                size_t maxRayDepth)
+                size_t maxRayDepth,
+                int frame)
 {
     // Get light list from the scene
     std::list<Shape*> lights;
@@ -448,16 +451,34 @@ Image* raytrace(ShapeSet& scene,
     // Set up render threads; we make as much as 16 chunks of the image that
     // can render in parallel.
     const size_t kChunkDim = 4;
-    
-    // Chunk size is the number of pixels per image chunk (we have to take care
-    // to deal with tiny images)
-    size_t xChunkSize = width >= kChunkDim ? width / kChunkDim : 1;
-    size_t yChunkSize = height >= kChunkDim ? height / kChunkDim : 1;
-    // Chunks are the number of chunks in each dimension we can chop the image
-    // into (again, taking care to deal with tiny images, and also images that
-    // don't divide clealy into 4 chunks)
-    size_t xChunks = width > kChunkDim ? width / xChunkSize : 1;
-    size_t yChunks = height > kChunkDim ? height / yChunkSize : 1;
+    const size_t kChunkWidth = 64;  //64x64 pixel chunks instead
+    size_t xChunks;
+    size_t yChunks;
+    size_t xChunkSize;
+    size_t yChunkSize;
+
+    if(false){   //the old way
+        // Chunk size is the number of pixels per image chunk (we have to take care
+        // to deal with tiny images)
+        xChunkSize = width >= kChunkDim ? width / kChunkDim : 1;
+        yChunkSize = height >= kChunkDim ? height / kChunkDim : 1;
+
+        // Chunks are the number of chunks in each dimension we can chop the image
+        // into (again, taking care to deal with tiny images, and also images that
+        // don't divide clealy into 4 chunks)
+        xChunks = width > kChunkDim ? width / xChunkSize : 1;
+        yChunks = height > kChunkDim ? height / yChunkSize : 1;
+    }
+    else{       //the new way
+        //get the number of chunks in the x direction
+        xChunks = width >= kChunkWidth ? width / kChunkWidth : 1;
+        yChunks = height >= kChunkWidth ? height / kChunkWidth : 1;
+        //get the number of chunks in the y direction
+
+        xChunkSize = width >= kChunkWidth ? kChunkWidth : width;
+        yChunkSize = height >= kChunkWidth ? kChunkWidth : height;
+    }
+
     if (xChunks * xChunkSize < width) xChunks++;
     if (yChunks * yChunkSize < height) yChunks++;
     
@@ -487,7 +508,8 @@ Image* raytrace(ShapeSet& scene,
                                                                 lights,
                                                                 pixelSamplesHint,
                                                                 lightSamplesHint,
-                                                                maxRayDepth);
+                                                                maxRayDepth,
+                                                                frame);
             renderThreads[yc * xChunks + xc]->start();
         }
     }
