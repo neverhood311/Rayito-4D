@@ -1,0 +1,76 @@
+//Sample .rsd file
+
+//
+scene = @Scene
+{
+	//render settings
+	m_renderSettings = @renderSettings{
+		//Gamma
+		gamma = 2.2;
+		//Exposure
+		exposure = 0.0;
+		//Samples per pixel
+		pixelSamples = 1;
+		//Samples per light
+		lightSamples = 1;
+		//Max bounce depth
+		maxDepth = 3;
+		//Field of view
+		fov = 30.0;
+		//Focal Distance
+		focalDist = 16.0;
+		//Lens Radius
+		lensRad = 0.0;
+		//Filename
+		filename = "frame";
+		//image height
+		imgHeight = 960;
+		//image width
+		imgWidth = 540;
+	}
+	
+	//camera
+	m_camera = @camera{
+		//TODO: these should be animatable
+		//LookAt
+		//LookFrom
+		//Up direction
+	}	
+		
+	//materials
+	m_materials = [
+		//material
+			//name
+			//type: Glossy or Diffuse
+			//Parameters
+	];
+		
+	
+	//shapes (including lights)
+		//shape
+			//type
+			//position
+			//material (string name)
+	
+	//transforms
+	
+	
+	
+	
+}
+
+//material
+	//glossy material
+	//diffuse material
+
+//transform
+	//each of the 6 rotations
+	//scale
+	//translation
+	//name of shape
+	//frame number
+
+//point4f
+
+//vector4f
+
