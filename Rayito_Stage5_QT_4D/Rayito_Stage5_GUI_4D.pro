@@ -31,3 +31,11 @@ HEADERS  += MainWindow.h \
 FORMS    += MainWindow.ui
 
 #QMAKE_CXXFLAGS += -Wno-unused-parameter
+
+#ADDED FOR THE RSD LIBRARY
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../Rsd/Rsd/release/ -lRsd
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../Rsd/Rsd/debug/ -lRsd
+
+INCLUDEPATH += $$PWD/../../Rsd/Rsd/Debug
+DEPENDPATH += $$PWD/../../Rsd/Rsd/Debug
+#***END RSD STUFF

@@ -224,6 +224,18 @@ Ray PerspectiveCamera::makeRay(float xScreen, float yScreen, float lensU, float 
     return ray;
 }
 
+Color rayTrace(const Ray& ray,
+               ShapeSet& scene,
+               std::list<Shape*>& lights){
+    Color result = Color(0.0f, 0.0f, 0.0f);
+    //TODO: implement a quick and dirty raytrace function that will return an easy-to-calculate color
+    //Possibilities:
+        //surface normal given as the color
+        //diffuse color of the object mixed with Lambert light falloff  <--probably the best option
+        //greyscale based on distance from camera
+
+    return result;
+}
 
 Color pathTrace(const Ray& ray,
                 ShapeSet& scene,

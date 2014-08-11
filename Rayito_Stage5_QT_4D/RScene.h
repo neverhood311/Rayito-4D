@@ -449,6 +449,8 @@ public:
         m_transform.translate(position);
     }
 
+    Tesseract(){}
+
     virtual ~Tesseract(){}
 
     virtual bool intersect(Intersection& intersection){
