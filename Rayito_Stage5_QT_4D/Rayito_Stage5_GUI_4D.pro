@@ -26,7 +26,8 @@ HEADERS  += MainWindow.h \
     RScene.h \
     RSampling.h \
     lodepng.h \
-    logger.h
+    logger.h \
+    SceneLoader.h
 
 FORMS    += MainWindow.ui
 

@@ -4,6 +4,7 @@
 //#include "rayito.h"
 //#include "lodepng.h"
 
+#include "SceneLoader.h"
 #include <QGraphicsScene>
 #include <QFileDialog>
 #include <QMessageBox>

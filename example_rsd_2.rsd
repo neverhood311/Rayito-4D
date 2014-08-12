@@ -1,0 +1,181 @@
+//Sample .rsd file
+
+//
+scene = @Scene
+{
+	//render settings
+	m_renderSettings = @renderSettings{
+		//Gamma
+		gamma = 2.2;
+		//Exposure
+		exposure = 0.0;
+		//Samples per pixel
+		pixelSamples = 1;
+		//Samples per light
+		lightSamples = 1;
+		//Max bounce depth
+		maxDepth = 3;
+		//Filename
+		filename = "frame";
+		//image height
+		imgHeight = 960;
+		//image width
+		imgWidth = 540;
+	};
+	
+	//camera
+	m_camera = @camera{
+		//TODO: these should be animatable
+		//LookAt
+		lookAt = [0.0, 0.0, 0.0, 0.0];
+		//LookFrom
+		lookFrom = [0.0, 5.0, 15.0, 0.0];
+		//Up direction
+		lookUp = [0.0, 1.0, 0.0, 0.0];
+		//Vertical Field of View
+		fov = 30.0;
+		//Focal Distance
+		focalDist = 16.0;
+		//Lens radius
+		lensRad = 0.0;
+	};	
+		
+	//materials
+	m_materials = {
+		//material
+			//name
+			//type: Glossy or Diffuse
+			//Parameters
+		greenishGlossy = @glossyMaterial{			
+			color = @V3F[0.3, 0.9, 0.3];
+			roughness = 0.0001;
+		};
+		blueLambert = @diffuseMaterial{
+			color = @V3F[0.7, 0.7, 0.9];
+		};
+		yellowishLambert = @diffuseMaterial{
+			color = @V3F[0.7, 0.7, 0.2];
+		};
+		purpleLambert = @diffuseMaterial{
+			color = @V3F[0.8, 0.3, 0.7];
+		};
+		blueGlossy = @glossyMaterial{
+			color = @V3F[0.5, 0.3, 0.8];
+			roughness = 0.3;
+		};
+	};
+		
+	
+	//shapes (including lights)
+	m_shapes = {
+		//shape
+			//type
+			//position
+			//material (string name)
+		plane1 = @plane{
+			position = @V4F[0.0, -2.0, 0.0, 0.0];
+			normal = @V4F[0.0, 1.0, 0.0, 0.0];
+			material = "blueLambert";
+			bullseye = true;
+		};
+		sphere1 = @sphere{
+			radius = 1.0;
+			position = @V4F[3.0, -1.0, 0.0, 0.0];
+			material = "purpleLambert";
+		};
+		sphere2 = @sphere{
+			radius = 2.0;
+			position = @V4F[-3.0, 0.0, -2.0, 0.0];
+			material = "greenishGlossy";
+		};
+		sphere3 = @sphere{
+			radius = 0.5;
+			position = @V4F[1.5, -1.5, 2.5, 0.0];
+			material = "blueGlossy";
+		};
+		sphere4 = @sphere{
+			radius = 0.5;
+			position = @V4F[-2.0, -1.5, 1.0, 0.0];
+			material = "yellowishLambert";
+		};
+		hypercube = @tesseract{
+			sidelength = 2.0;
+			position = @V4F[0.0, 0.0, 0.0, 0.0];
+			material = "yellowishLambert";
+		};
+		sphereForLight = @sphere{
+			isLight = true;	//this indicates that the sphere will be a light. It won't be added to the master set as a sphere
+			radius = 0.5;
+			position = @V4F[0.0, 0.5, 2.0, 0.0];
+			material = "blueLambert";
+		};
+		sphereLight = @shapeLight{
+			shape = "sphereForLight";	//the shape is added through this shapeLight
+			color = @V3F[1.0, 1.0, 0.3];
+			power = 10.0;
+		};
+		areaLight = @rectangleLight{
+			corner = @V4F[-1.5, 4.0, -1.5, 0.0];
+			side1 = @V4F[3.0, 0.0, 0.0, 0.0];
+			side2 = @V4F[0.0, 0.0, 3.0, 0.0];
+			color = @V3F[1.0, 1.0, 1.0];
+			power = 5.0;
+		};
+	};
+	
+	//transforms - a different (better) way to do it
+	m_transforms = [
+		{	//first transform: belongs to the hypercube object and is its rotation data
+			shape = "hypercube";
+			type = "rotate";
+			data = {
+				//frame number = rotation data array [xy, xz, xw, yz, yw, zw]
+				f0 = [20.0, 45.0, 0.0, 0.0, 15.0, 35.0];
+				f1 = [21.0, 44.0, 0.0, 2.0, 15.0, 35.0];
+				f2 = [23.0, 43.0, 0.0, 4.0, 15.0, 35.0];
+			};
+		},
+		{	//second transform: belongs to the hypercube object and is its translation data
+			shape = "hypercube";
+			type = "translate";
+			data = {
+				//frame number = translation data [x, y, z, w]
+				f0 = [0.0, 0.0, 0.0, 0.0];
+				//between 0 and 12, the translation is linearly interpolated
+				f12 = [0.1, 0.0, 0.0, 0.0];
+			};
+		},
+		{
+			//third transform: visibility
+			shape = "hypercube";
+			type = "visibility";
+			data = {
+				//frame number = visbile or not
+				f0 = 1;
+				//invisible on frames 13 and 14
+				f13 = 0;
+				//once again visible on frame 15
+				f15 = 1;
+			}
+		}
+	];
+	
+	
+	
+};
+
+//material
+	//glossy material
+	//diffuse material
+
+//transform
+	//each of the 6 rotations
+	//scale
+	//translation
+	//name of shape
+	//frame number
+
+//point4f
+
+//vector4f
+
