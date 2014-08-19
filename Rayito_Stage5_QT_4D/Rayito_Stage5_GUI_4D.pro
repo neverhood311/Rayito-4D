@@ -31,12 +31,18 @@ HEADERS  += MainWindow.h \
 
 FORMS    += MainWindow.ui
 
+#The next line should be uncommented for Linux
 #QMAKE_CXXFLAGS += -Wno-unused-parameter
 
-#ADDED FOR THE RSD LIBRARY
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../Rsd/Rsd/release/ -lRsd
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../Rsd/Rsd/debug/ -lRsd
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../Rsd/Rsd/x64/release/ -lRsd
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../Rsd/Rsd/x64/debug/ -lRsd
+else:unix: LIBS += -L$$PWD/../../Rsd/Rsd/ -lRsd
 
-INCLUDEPATH += $$PWD/../../Rsd/Rsd/Debug
-DEPENDPATH += $$PWD/../../Rsd/Rsd/Debug
-#***END RSD STUFF
+INCLUDEPATH += $$PWD/../../Rsd/include
+DEPENDPATH += $$PWD/../../Rsd/include
+
+win32:CONFIG(release, debug|release): LIBS += -LC:/local/boost_1_55_0/lib64-msvc-12.0/ -llibboost_atomic-vc120-mt-gd-1_55
+else:win32:CONFIG(debug, debug|release): LIBS += -LC:/local/boost_1_55_0/lib64-msvc-12.0/ -llibboost_atomic-vc120-mt-gd-1_55
+
+INCLUDEPATH += C:/local/boost_1_55_0/
+DEPENDPATH += C:/local/boost_1_55_0/

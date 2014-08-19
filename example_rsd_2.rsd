@@ -103,14 +103,13 @@ scene = @Scene
 			position = @V4F[0.0, 0.0, 0.0, 0.0];
 			material = "yellowishLambert";
 		};
-		sphereForLight = @sphere{
-			isLight = true;	//this indicates that the sphere will be a light. It won't be added to the master set as a sphere
-			radius = 0.5;
-			position = @V4F[0.0, 0.5, 2.0, 0.0];
-			material = "blueLambert";
-		};
 		sphereLight = @shapeLight{
-			shape = "sphereForLight";	//the shape is added through this shapeLight
+			shape = @sphere{
+				isLight = true;	//this indicates that the sphere will be a light. It won't be added to the master set as a sphere
+				radius = 0.5;
+				position = @V4F[0.0, 0.5, 2.0, 0.0];
+				material = "blueLambert";
+			};
 			color = @V3F[1.0, 1.0, 0.3];
 			power = 10.0;
 		};
@@ -156,7 +155,7 @@ scene = @Scene
 				f13 = 0;
 				//once again visible on frame 15
 				f15 = 1;
-			}
+			};
 		}
 	];
 	
