@@ -6,6 +6,7 @@
 #include <vector>
 #include <Rsd/Parser.h>
 #include <Rsd/File.h>
+#include <sstream>
 using namespace RenderSpud::Rsd;
 
 //this contains the render settings for the scene
@@ -18,6 +19,8 @@ struct RenderSettings{
     std::string filename;
     int imgHeight;
     int imgWidth;
+    int startFrame;
+    int endFrame;
 };
 
 //this is the transformation for one object for one frame
@@ -26,8 +29,15 @@ struct Transform{
     float m_trans[4];
     //rotation
     float m_rot[6]; //xy, xz, xw, yz, yw, zw
+    //scale
+    float m_scale[4];
     //visibility
     bool m_visible = true;
+    //whether each transform is used
+    bool useTrans = false;
+    bool useRot = false;
+    bool useScale = false;
+    bool useVisible = false;
 };
 
 struct TransformList{
@@ -99,37 +109,24 @@ public:
 
         //get the render settings
         try{
-            Reference::Ptr pRef = Reference::fromString("scene.m_renderSettings.gamma");
+            Reference::Ptr pRef = Reference::fromString("scene.m_renderSettings");
             Value::Ptr pResult = pFile->find(*pRef);
-            m_scene->m_renderSettings.gamma = pResult->asFloat();
 
-            pRef = Reference::fromString("scene.m_renderSettings.exposure");
-            pResult = pFile->find(*pRef);
-            m_scene->m_renderSettings.exposure = pResult->asFloat();
-
-            pRef = Reference::fromString("scene.m_renderSettings.pixelSamples");
-            pResult = pFile->find(*pRef);
-            m_scene->m_renderSettings.pixelSamples = (int)pResult->asInteger();
-
-            pRef = Reference::fromString("scene.m_renderSettings.lightSamples");
-            pResult = pFile->find(*pRef);
-            m_scene->m_renderSettings.lightSamples = (int)pResult->asInteger();
-
-            pRef = Reference::fromString("scene.m_renderSettings.maxDepth");
-            pResult = pFile->find(*pRef);
-            m_scene->m_renderSettings.maxBounceDepth = (int)pResult->asInteger();
-
-            pRef = Reference::fromString("scene.m_renderSettings.filename");
-            pResult = pFile->find(*pRef);
-            m_scene->m_renderSettings.filename = pResult->asString();
-
-            pRef = Reference::fromString("scene.m_renderSettings.imgHeight");
-            pResult = pFile->find(*pRef);
-            m_scene->m_renderSettings.imgHeight = (int)pResult->asInteger();
-
-            pRef = Reference::fromString("scene.m_renderSettings.imgWidth");
-            pResult = pFile->find(*pRef);
-            m_scene->m_renderSettings.imgWidth = (int)pResult->asInteger();
+            //TODO: check for valid settings
+            m_scene->m_renderSettings.gamma = pResult->find("gamma")->asFloat();
+            m_scene->m_renderSettings.exposure = pResult->find("exposure")->asFloat();
+            //TODO: make sure these are non-negative
+            m_scene->m_renderSettings.pixelSamples = (int)pResult->find("pixelSamples")->asInteger();
+            m_scene->m_renderSettings.lightSamples = (int)pResult->find("lightSamples")->asInteger();
+            m_scene->m_renderSettings.maxBounceDepth = (int)pResult->find("maxDepth")->asInteger();
+            //TODO: be sure to have a default filename if there is none specified
+            m_scene->m_renderSettings.filename = pResult->find("filename")->asString();
+            //TODO: make sure these are greater than 0
+            m_scene->m_renderSettings.imgHeight = (int)pResult->find("imgHeight")->asInteger();
+            m_scene->m_renderSettings.imgWidth = (int)pResult->find("imgWidth")->asInteger();
+            //TODO: make sure endFrame >= startFrame
+            m_scene->m_renderSettings.startFrame = (int)pResult->find("startFrame")->asInteger();
+            m_scene->m_renderSettings.endFrame = (int)pResult->find("endFrame")->asInteger();
         }
         catch(Parser::ParseException& pe){
             std::cout << "Error loading render settings" << std::endl;
@@ -186,56 +183,60 @@ public:
                 //if it's a shapeLight
                 if(shape->typeNameMatches("shapeLight")){
                     //get the shape
+                    Rayito::Shape* tempShape = getShape(shape->find("shape"));
                     //get the color
+                    Value::Ptr tempColPtr = shape->find("color");
+                    Rayito::Color tempCol;
+                    tempCol.m_r = tempColPtr->value(0)->asFloat();
+                    tempCol.m_g = tempColPtr->value(1)->asFloat();
+                    tempCol.m_b = tempColPtr->value(2)->asFloat();
                     //get the power
-                    //get the shape
+                    float power = shape->find("power")->asFloat();
+                    //make the shape
+                    Rayito::ShapeLight *shapeLight = new Rayito::ShapeLight(tempShape, tempCol, power);
+                    m_scene->m_shapes[name] = shapeLight;
                     continue;
                 }
                 //if it's a rectangleLight
                 else if(shape->typeNameMatches("rectangleLight")){
                     //get the corner
+                    Value::Ptr tempPtr = shape->find("corner");
+                    Rayito::Point corner;
+                    corner.m_x = tempPtr->value(0)->asFloat();
+                    corner.m_y = tempPtr->value(1)->asFloat();
+                    corner.m_z = tempPtr->value(2)->asFloat();
+                    corner.m_w = tempPtr->value(3)->asFloat();
                     //get side1
+                    tempPtr = shape->find("side1");
+                    Rayito::Vector side1;
+                    side1.m_x = tempPtr->value(0)->asFloat();
+                    side1.m_y = tempPtr->value(1)->asFloat();
+                    side1.m_z = tempPtr->value(2)->asFloat();
+                    side1.m_w = tempPtr->value(3)->asFloat();
                     //get side2
+                    tempPtr = shape->find("side2");
+                    Rayito::Vector side2;
+                    side2.m_x = tempPtr->value(0)->asFloat();
+                    side2.m_y = tempPtr->value(1)->asFloat();
+                    side2.m_z = tempPtr->value(2)->asFloat();
+                    side2.m_w = tempPtr->value(3)->asFloat();
                     //get the color
+                    tempPtr = shape->find("side1");
+                    Rayito::Color color;
+                    color.m_r = tempPtr->value(0)->asFloat();
+                    color.m_g = tempPtr->value(1)->asFloat();
+                    color.m_b = tempPtr->value(2)->asFloat();
                     //get the power
+                    float power = shape->find("power")->asFloat();
+                    //make the shape
+                    Rayito::RectangleLight *tempLight = new Rayito::RectangleLight(corner, side1, side2, color, power);
+                    m_scene->m_shapes[name] = tempLight;
                     continue;
                 }
-                //get the position
-                Value::Ptr tempPos = shape->find("position");
-                Rayito::Point tempPt;
-                tempPt.m_x = tempPos->value(0)->asFloat();
-                tempPt.m_y = tempPos->value(1)->asFloat();
-                tempPt.m_z = tempPos->value(2)->asFloat();
-                tempPt.m_w = tempPos->value(3)->asFloat();
-                //get the material
-                std::string matString = shape->find("material")->asString();
-                Rayito::Material *tempMat = m_scene->m_materials[matString];
-                //if it's a plane
-                if(shape->typeNameMatches("plane")){
-                    //get the normal
-                    Value::Ptr tempNorm = shape->find("normal");
-                    Rayito::Vector tempVec;
-                    tempVec.m_x = tempNorm->value(0)->asFloat();
-                    tempVec.m_y = tempNorm->value(1)->asFloat();
-                    tempVec.m_z = tempNorm->value(2)->asFloat();
-                    tempVec.m_w = tempNorm->value(3)->asFloat();
-                    //get the bullseye
-                    bool bullseye = shape->find("bullseye")->asBoolean();
-                    Rayito::Plane *tempPlane = new Rayito::Plane(tempPt, tempVec, tempMat, bullseye);
-                    m_scene->m_shapes[name] = tempPlane;
-                }
-                //if it's a sphere
-                else if(shape->typeNameMatches("sphere")){
-                    //get the radius
-                    float radius = shape->find("radius")->asFloat();
-                    Rayito::Sphere *tempSphere = new Rayito::Sphere(tempPt, radius, tempMat);
-                    m_scene->m_shapes[name] = tempSphere;
-                }
-                //if it's a tesseract
-                else if(shape->typeNameMatches("tesseract")){
-                    //get the sidelength
-                    float sideLength = shape->find("sidelength")->asFloat();
-                    Rayito::Tesseract *tempTess = new Rayito::Tesseract(tempPt, sideLength, tempMat);
+                //if it's a regular old shape
+                else if(shape->typeNameMatches("plane") || shape->typeNameMatches("sphere") || shape->typeNameMatches("tesseract")){
+                    Rayito::Shape* tempShape = getShape(shape);
+                    m_scene->m_shapes[name] = tempShape;
                 }
             }
         }
@@ -243,13 +244,152 @@ public:
             std::cout << "Error loading shapes" << std::endl;
         }
 
-        //TODO: get the transforms
+        //get the transforms
+        try{
             //linearly interpolate between keyframes
+            Reference::Ptr pRef = Reference::fromString("scene.m_transforms");
+            Value::Ptr pResult = pFile->find(*pRef);
+            size_t numTransforms = pResult->size();
+            //for each transform
+            for(int i = 0; i < numTransforms; i++){
+                //get the name of the shape this transform corresponds to
+                Value::Ptr trans = pResult->value(i);
+                //get the name of the shape
+                std::string shapeName = trans->find("shape")->asString();
+
+                Value::Ptr translate = trans->find("translate");//get the translation, if there is one
+                Value::Ptr rotate = trans->find("rotation");//get the rotation, if there is one
+                Value::Ptr scale = trans->find("scale");//get the scale if there is one
+                Value::Ptr visible = trans->find("visibility");//get the visibility if there is one
+
+                //get the number of frames
+                int startFr =   m_scene->m_renderSettings.startFrame;
+                int endFr =     m_scene->m_renderSettings.endFrame;
+                int frameCount = endFr - startFr;
+
+                //get the default values for this shape
+                //Transform frVal, prevVal, nextVal;
+
+                std::vector<std::vector<float>> transVals;
+                //if there's a translate channel
+                if(translate){
+                    getChannelFloats(translate, transVals, 4);
+                }
+                std::vector<std::vector<float>> rotVals;
+                if(rotate){
+                    getChannelFloats(rotate, rotVals, 6);
+                }
+                std::vector<std::vector<float>> scaleVals;
+                if(scale){
+                    getChannelFloats(scale, scaleVals, 4);
+                }
+
+
+            }
+        }
+        catch(Parser::ParseException& pe){
+            std::cout << "Error loading transforms" << std::endl;
+        }
         return true;
     }
 
     bool noErrors;
 private:
+    void getChannelFloats(Value::Ptr _channel, std::vector<std::vector<float>> &_transVals, int numVals){
+
+        int startFr =   m_scene->m_renderSettings.startFrame;
+        int endFr =     m_scene->m_renderSettings.endFrame;
+        //fill the vector with the first value all the way back to the first frame
+        Value::Ptr curKey = _channel->value(0);
+        int frameNum = getFrameNum(curKey->name());//the current frame we're working on
+        if(frameNum > startFr){
+            for(int f = startFr; f < frameNum; f++){
+                std::vector<float> vals(numVals, 0);
+                for(int i = 0; i < numVals; i++){
+                    vals[i] = curKey->value(i)->asFloat();
+                }
+                _transVals.push_back(vals);
+            }
+        }
+        size_t numKeys = _channel->size();
+        //for each keyframe
+        for(int curK = 0; curK < numKeys - 1; curK++){
+            Value::Ptr nextKey;
+            //get the next keyframe values
+            nextKey = _channel->value(curK + 1);
+            //fill the interpolated values
+            int nextFrameNum = getFrameNum(nextKey->name());
+            float range = nextFrameNum - frameNum;
+            for(int interp = 0; interp < range; interp++){
+                float factor = (float)interp / range;
+                std::vector<float> vals(numVals, 0);
+                for(int i = 0; i < numVals; i++){
+                    vals[i] = lerp(curKey->value(i)->asFloat(), nextKey->value(i)->asFloat(), factor);
+                }
+                _transVals.push_back(vals);
+            }
+            frameNum = nextFrameNum;
+            curKey = nextKey;
+        }
+        //fill the rest of the values with this keyframe's value
+        for(int f = frameNum; f < endFr; f++){
+            std::vector<float> vals(numVals, 0);
+            for(int i = 0; i < numVals; i++){
+                vals[i] = curKey->value(i)->asFloat();
+            }
+            _transVals.push_back(vals);
+        }
+    }
+
+    double lerp(double first, double second, double factor){
+        return first + factor * (second - first);
+    }
+
+    int getFrameNum(std::string str){
+        return stoi(str.substr(1));
+    }
+
+    Rayito::Shape* getShape(Value::Ptr _shape){
+        //get the position
+        Value::Ptr tempPos = _shape->find("position");
+        Rayito::Point tempPt;
+        tempPt.m_x = tempPos->value(0)->asFloat();
+        tempPt.m_y = tempPos->value(1)->asFloat();
+        tempPt.m_z = tempPos->value(2)->asFloat();
+        tempPt.m_w = tempPos->value(3)->asFloat();
+        //get the material
+        std::string matString = _shape->find("material")->asString();
+        Rayito::Material *tempMat = m_scene->m_materials[matString];
+        //if it's a plane
+        if(_shape->typeNameMatches("plane")){
+            //get the normal
+            Value::Ptr tempNorm = _shape->find("normal");
+            Rayito::Vector tempVec;
+            tempVec.m_x = tempNorm->value(0)->asFloat();
+            tempVec.m_y = tempNorm->value(1)->asFloat();
+            tempVec.m_z = tempNorm->value(2)->asFloat();
+            tempVec.m_w = tempNorm->value(3)->asFloat();
+            //get the bullseye
+            bool bullseye = _shape->find("bullseye")->asBoolean();
+            Rayito::Plane *tempPlane = new Rayito::Plane(tempPt, tempVec, tempMat, bullseye);
+            return tempPlane;
+        }
+        //if it's a sphere
+        else if(_shape->typeNameMatches("sphere")){
+            //get the radius
+            float radius = _shape->find("radius")->asFloat();
+            Rayito::Sphere *tempSphere = new Rayito::Sphere(tempPt, radius, tempMat);
+            return tempSphere;
+        }
+        //if it's a tesseract
+        else if(_shape->typeNameMatches("tesseract")){
+            //get the sidelength
+            float sideLength = _shape->find("sidelength")->asFloat();
+            Rayito::Tesseract *tempTess = new Rayito::Tesseract(tempPt, sideLength, tempMat);
+            return tempTess;
+        }
+    }
+
     SceneBuffer* m_scene;
     std::string m_filepath;
     File::FilePtr pFile;
