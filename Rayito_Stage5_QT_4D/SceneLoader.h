@@ -22,6 +22,27 @@ struct RenderSettings{
     int startFrame;
     int endFrame;
 };
+//contains the initial camera settings
+struct CameraSettings{
+	float lookAt[4];
+    float lookFrom[4];
+    float lookUp[4];
+    float fov;
+    float focus_dist;
+    float lens_radius;
+	
+    CameraSettings(){}
+	CameraSettings(const CameraSettings& c){
+		for(int i = 0; i < 4; i++){
+			lookAt[i] = c.lookAt[i];
+			lookFrom[i] = c.lookFrom[i];
+			lookUp[i] = c.lookUp[i];
+		}
+		fov = c.fov;
+		focus_dist = c.focus_dist;
+		lens_radius = c.lens_radius;
+	}    
+};
 
 //this is the transformation for one object for one frame
 struct Transform{
@@ -33,18 +54,18 @@ struct Transform{
     float m_scale[4];
     //visibility
     bool m_visible = true;
-    //whether each transform is used
-    bool useTrans = false;
-    bool useRot = false;
-    bool useScale = false;
-    bool useVisible = false;
 };
 
 struct TransformList{
     //vector of transforms (frames 0 through the final frame)
-    std::vector<Transform> m_transforms;
+    std::vector<Transform*> m_transforms;
     //number of transforms
     int m_count;
+	//whether each transform is used
+    bool useTrans = false;
+    bool useRot = false;
+    bool useScale = false;
+    bool useVisible = false;
 };
 
 //this stores the entire scene once it's been loaded from the file
@@ -52,13 +73,24 @@ struct SceneBuffer{
     //map of materials: material name => material
     std::map<std::string, Rayito::Material*> m_materials;
     //camera
-
+    CameraSettings m_initialCamera;
+    std::vector<CameraSettings*> m_cameraTransforms;
     //map of shapes: shape name => shape
     std::map<std::string, Rayito::Shape*> m_shapes;
     //mape of transforms: shape name => array of transform lists
-    std::map<std::string, TransformList> m_transforms;
+    std::map<std::string, TransformList*> m_transforms;
     //the render settings for the scene
     RenderSettings m_renderSettings;
+
+    SceneBuffer(){}
+
+    ~SceneBuffer(){
+        //TODO: the SceneBuffer is responsible for deleting variables
+        //delete the materials
+        //delete the camera transforms
+        //delete the shapes
+        //delete the shape transforms
+    }
 };
 
 //this loads the RSD file into the SceneBuffer
@@ -103,6 +135,7 @@ public:
         }
         catch(Parser::ParseException& pe){
             std::cout << "Parsement failed, dude." << std::endl;
+            return false;
         }
 
         //load the RSD file
@@ -113,8 +146,8 @@ public:
             Value::Ptr pResult = pFile->find(*pRef);
 
             //TODO: check for valid settings
-            m_scene->m_renderSettings.gamma = pResult->find("gamma")->asFloat();
-            m_scene->m_renderSettings.exposure = pResult->find("exposure")->asFloat();
+            m_scene->m_renderSettings.gamma = (float)pResult->find("gamma")->asFloat();
+            m_scene->m_renderSettings.exposure = (float)pResult->find("exposure")->asFloat();
             //TODO: make sure these are non-negative
             m_scene->m_renderSettings.pixelSamples = (int)pResult->find("pixelSamples")->asInteger();
             m_scene->m_renderSettings.lightSamples = (int)pResult->find("lightSamples")->asInteger();
@@ -130,7 +163,13 @@ public:
         }
         catch(Parser::ParseException& pe){
             std::cout << "Error loading render settings" << std::endl;
+            return false;
         }
+
+        //get the number of frames
+        int startFr =   m_scene->m_renderSettings.startFrame;
+        int endFr =     m_scene->m_renderSettings.endFrame;
+        int frameCount = endFr - startFr;
 
         //get the materials
         try{
@@ -146,13 +185,13 @@ public:
                 std::string name = mat->name();
                 //get the color
                 Value::Ptr colorPtr = mat->find("color");
-                float r_val = colorPtr->value(0)->asFloat();
-                float g_val = colorPtr->value(1)->asFloat();
-                float b_val = colorPtr->value(2)->asFloat();
+                float r_val = (float)colorPtr->value(0)->asFloat();
+                float g_val = (float)colorPtr->value(1)->asFloat();
+                float b_val = (float)colorPtr->value(2)->asFloat();
                 //if it's a glossyMaterial
                 if(mat->typeNameMatches("glossyMaterial")){
                     //get the roughness
-                    float rough = mat->find("roughness")->asFloat();
+                    float rough = (float)mat->find("roughness")->asFloat();
                     Rayito::GlossyMaterial *tempGlossyMat = new Rayito::GlossyMaterial(Rayito::Color(r_val, g_val, b_val), rough);
                     m_scene->m_materials[name] = tempGlossyMat;
                 }
@@ -166,9 +205,8 @@ public:
         }
         catch(Parser::ParseException& pe){
             std::cout << "Error loading materials" << std::endl;
+            return false;
         }
-
-        //TODO: get the camera
 
         //get the shapes
         try{
@@ -242,16 +280,20 @@ public:
         }
         catch(Parser::ParseException& pe){
             std::cout << "Error loading shapes" << std::endl;
+            return false;
         }
 
-        //get the transforms
+        //get the shape transforms
         try{
             //linearly interpolate between keyframes
             Reference::Ptr pRef = Reference::fromString("scene.m_transforms");
             Value::Ptr pResult = pFile->find(*pRef);
             size_t numTransforms = pResult->size();
+
             //for each transform
             for(int i = 0; i < numTransforms; i++){
+                TransformList* tempList = new TransformList();
+                tempList->m_count = frameCount;
                 //get the name of the shape this transform corresponds to
                 Value::Ptr trans = pResult->value(i);
                 //get the name of the shape
@@ -262,39 +304,149 @@ public:
                 Value::Ptr scale = trans->find("scale");//get the scale if there is one
                 Value::Ptr visible = trans->find("visibility");//get the visibility if there is one
 
-                //get the number of frames
-                int startFr =   m_scene->m_renderSettings.startFrame;
-                int endFr =     m_scene->m_renderSettings.endFrame;
-                int frameCount = endFr - startFr;
-
                 //get the default values for this shape
                 //Transform frVal, prevVal, nextVal;
-
                 std::vector<std::vector<float>> transVals;
                 //if there's a translate channel
                 if(translate){
+                    tempList->useTrans = true;
                     getChannelFloats(translate, transVals, 4);
                 }
                 std::vector<std::vector<float>> rotVals;
                 if(rotate){
+                    tempList->useRot = true;
                     getChannelFloats(rotate, rotVals, 6);
                 }
                 std::vector<std::vector<float>> scaleVals;
                 if(scale){
+                    tempList->useScale = true;
                     getChannelFloats(scale, scaleVals, 4);
                 }
-
-
+                std::vector<std::vector<int>> visibleVals;
+                if(visible){
+                    tempList->useVisible = true;
+                    getChannelInts(visible, visibleVals, 1);
+                }
+                //store the transforms so that they can be tied to their shape
+                for(int f = 0; f < frameCount; f++){
+                    //create a transform and add it to the list
+                    Transform* tempTransform = new Transform();
+                    if(tempList->useTrans){
+                        for(int c = 0; c < 4; c++){
+                            tempTransform->m_trans[c] = transVals.at(f).at(c);
+                        }
+                    }
+                    if(tempList->useRot){
+                        for(int c = 0; c < 6; c++){
+                            tempTransform->m_rot[c] = rotVals.at(f).at(c);
+                        }
+                    }
+                    if(tempList->useScale){
+                        for(int c = 0; c < 4; c++){
+                            tempTransform->m_scale[c] = scaleVals.at(f).at(c);
+                        }
+                    }
+                    if(tempList->useVisible){
+                        tempTransform->m_visible = (visibleVals.at(f).at(0) != 0);
+                    }
+                    tempList->m_transforms.push_back(tempTransform);
+                }
+                //add the TransformList to the SceneBuffer
+                m_scene->m_transforms[shapeName] = tempList;
             }
         }
         catch(Parser::ParseException& pe){
             std::cout << "Error loading transforms" << std::endl;
+            return false;
         }
+        //get the initial camera settings
+        try{
+            Reference::Ptr pRef = Reference::fromString("scene.m_camera");
+            Value::Ptr pResult = pFile->find(*pRef);
+            Value::Ptr lookAt = pResult->find("lookAt");
+            for(int i = 0; i < 4; i++){
+                m_scene->m_initialCamera.lookAt[i] = (float)lookAt->value(i)->asFloat();
+            }
+            Value::Ptr lookFrom = pResult->find("lookFrom");
+            for(int i = 0; i < 4; i++){
+                m_scene->m_initialCamera.lookFrom[i] = (float)lookFrom->value(i)->asFloat();
+            }
+            Value::Ptr lookUp = pResult->find("lookUp");
+            for(int i = 0; i < 4; i++){
+                m_scene->m_initialCamera.lookUp[i] = (float)lookUp->value(i)->asFloat();
+            }
+            m_scene->m_initialCamera.fov = (float)pResult->find("fov")->asFloat();
+            m_scene->m_initialCamera.focus_dist = (float)pResult->find("focalDist")->asFloat();
+            m_scene->m_initialCamera.lens_radius = (float)pResult->find("lensRad")->asFloat();
+        }
+        catch(Parser::ParseException& pe){
+            std::cout << "Error loading camera settings" << std::endl;
+            return false;
+        }
+
+        //get the camera movement
+        try{
+            Reference::Ptr pRef = Reference::fromString("scene.m_camTransforms");
+            Value::Ptr pResult = pFile->find(*pRef);
+            //check for a lookAt transform
+            Value::Ptr lookAt = pResult->find("anim_lookAt");
+            std::vector<std::vector<float>> lookAtVals;
+            if(lookAt){
+                getChannelFloats(lookAt, lookAtVals, 4);
+            }
+            //check for a lookFrom transform
+            Value::Ptr lookFrom = pResult->find("anim_lookFrom");
+            std::vector<std::vector<float>> lookFromVals;
+            if(lookFrom){
+                getChannelFloats(lookFrom, lookFromVals, 4);
+            }
+            //check for a lookUp transform
+            Value::Ptr lookUp = pResult->find("anim_lookUp");
+            std::vector<std::vector<float>> lookUpVals;
+            if(lookUp){
+                getChannelFloats(lookUp, lookUpVals, 4);
+            }
+            //check for a fov transform
+            Value::Ptr fov = pResult->find("anim_fov");
+            std::vector<std::vector<float>> fovVals;
+            if(fov){
+                getChannelFloats(fov, fovVals, 1);
+            }
+            //store the transforms so that they can be tied to the camera
+            for(int f = 0; f < frameCount; f++){
+                CameraSettings* tempCam = new CameraSettings(m_scene->m_initialCamera);
+                if(lookAt){
+                    for(int c = 0; c < 4; c++){
+                        tempCam->lookAt[c] = lookAtVals.at(f).at(c);
+                    }
+                }
+                if(lookFrom){
+                    for(int c = 0; c < 4; c++){
+                        tempCam->lookFrom[c] = lookFromVals.at(f).at(c);
+                    }
+                }
+                if(lookUp){
+                    for(int c = 0; c < 4; c++){
+                        tempCam->lookUp[c] = lookUpVals.at(f).at(c);
+                    }
+                }
+                if(fov){
+                    tempCam->fov = fovVals.at(f).at(0);
+                }
+                m_scene->m_cameraTransforms.push_back(tempCam);
+            }
+        }
+        catch(Parser::ParseException& pe){
+            std::cout << "Error loading camera transforms" << std::endl;
+            return false;
+        }
+
         return true;
     }
 
     bool noErrors;
 private:
+    //this linearly interpolates between keyframes
     void getChannelFloats(Value::Ptr _channel, std::vector<std::vector<float>> &_transVals, int numVals){
 
         int startFr =   m_scene->m_renderSettings.startFrame;
@@ -306,7 +458,7 @@ private:
             for(int f = startFr; f < frameNum; f++){
                 std::vector<float> vals(numVals, 0);
                 for(int i = 0; i < numVals; i++){
-                    vals[i] = curKey->value(i)->asFloat();
+                    vals[i] = (float)curKey->value(i)->asFloat();
                 }
                 _transVals.push_back(vals);
             }
@@ -324,7 +476,7 @@ private:
                 float factor = (float)interp / range;
                 std::vector<float> vals(numVals, 0);
                 for(int i = 0; i < numVals; i++){
-                    vals[i] = lerp(curKey->value(i)->asFloat(), nextKey->value(i)->asFloat(), factor);
+                    vals[i] = lerp((float)curKey->value(i)->asFloat(), (float)nextKey->value(i)->asFloat(), factor);
                 }
                 _transVals.push_back(vals);
             }
@@ -335,17 +487,61 @@ private:
         for(int f = frameNum; f < endFr; f++){
             std::vector<float> vals(numVals, 0);
             for(int i = 0; i < numVals; i++){
-                vals[i] = curKey->value(i)->asFloat();
+                vals[i] = (float)curKey->value(i)->asFloat();
+            }
+            _transVals.push_back(vals);
+        }
+    }
+    //this follows a step function; values only change at each keyframe
+    void getChannelInts(Value::Ptr _channel, std::vector<std::vector<int>> &_transVals, int numVals){
+        int startFr =   m_scene->m_renderSettings.startFrame;
+        int endFr =     m_scene->m_renderSettings.endFrame;
+        //fill the vector with the first value all the way back to the first frame
+        Value::Ptr curKey = _channel->value(0);
+        int frameNum = getFrameNum(curKey->name());//the current frame we're working on
+        if(frameNum > startFr){
+            for(int f = startFr; f < frameNum; f++){
+                std::vector<int> vals(numVals, 0);
+                for(int i = 0; i < numVals; i++){
+                    vals[i] = curKey->value(i)->asInteger();
+                }
+                _transVals.push_back(vals);
+            }
+        }
+        size_t numKeys = _channel->size();
+        //for each keyframe
+        for(int curK = 0; curK < numKeys - 1; curK++){
+            Value::Ptr nextKey;
+            //get the next keyframe values
+            nextKey = _channel->value(curK + 1);
+            //fill the values
+            int nextFrameNum = getFrameNum(nextKey->name());
+            int range = nextFrameNum - frameNum;
+            for(int interp = 0; interp < range; interp++){
+                std::vector<int> vals(numVals, 0);
+                for(int i = 0; i < numVals; i++){
+                    vals[i] = curKey->value(i)->asInteger();//this doesn't interpolate
+                }
+                _transVals.push_back(vals);
+            }
+            frameNum = nextFrameNum;
+            curKey = nextKey;
+        }
+        //fill the rest of the values with this keyframe's value
+        for(int f = frameNum; f < endFr; f++){
+            std::vector<int> vals(numVals, 0);
+            for(int i = 0; i < numVals; i++){
+                vals[i] = curKey->value(i)->asInteger();
             }
             _transVals.push_back(vals);
         }
     }
 
-    double lerp(double first, double second, double factor){
+    inline double lerp(double first, double second, double factor){
         return first + factor * (second - first);
     }
 
-    int getFrameNum(std::string str){
+    inline int getFrameNum(std::string str){
         return stoi(str.substr(1));
     }
 
@@ -353,10 +549,10 @@ private:
         //get the position
         Value::Ptr tempPos = _shape->find("position");
         Rayito::Point tempPt;
-        tempPt.m_x = tempPos->value(0)->asFloat();
-        tempPt.m_y = tempPos->value(1)->asFloat();
-        tempPt.m_z = tempPos->value(2)->asFloat();
-        tempPt.m_w = tempPos->value(3)->asFloat();
+        tempPt.m_x = (float)tempPos->value(0)->asFloat();
+        tempPt.m_y = (float)tempPos->value(1)->asFloat();
+        tempPt.m_z = (float)tempPos->value(2)->asFloat();
+        tempPt.m_w = (float)tempPos->value(3)->asFloat();
         //get the material
         std::string matString = _shape->find("material")->asString();
         Rayito::Material *tempMat = m_scene->m_materials[matString];
@@ -365,10 +561,10 @@ private:
             //get the normal
             Value::Ptr tempNorm = _shape->find("normal");
             Rayito::Vector tempVec;
-            tempVec.m_x = tempNorm->value(0)->asFloat();
-            tempVec.m_y = tempNorm->value(1)->asFloat();
-            tempVec.m_z = tempNorm->value(2)->asFloat();
-            tempVec.m_w = tempNorm->value(3)->asFloat();
+            tempVec.m_x = (float)tempNorm->value(0)->asFloat();
+            tempVec.m_y = (float)tempNorm->value(1)->asFloat();
+            tempVec.m_z = (float)tempNorm->value(2)->asFloat();
+            tempVec.m_w = (float)tempNorm->value(3)->asFloat();
             //get the bullseye
             bool bullseye = _shape->find("bullseye")->asBoolean();
             Rayito::Plane *tempPlane = new Rayito::Plane(tempPt, tempVec, tempMat, bullseye);
@@ -377,17 +573,18 @@ private:
         //if it's a sphere
         else if(_shape->typeNameMatches("sphere")){
             //get the radius
-            float radius = _shape->find("radius")->asFloat();
+            float radius = (float)_shape->find("radius")->asFloat();
             Rayito::Sphere *tempSphere = new Rayito::Sphere(tempPt, radius, tempMat);
             return tempSphere;
         }
         //if it's a tesseract
         else if(_shape->typeNameMatches("tesseract")){
             //get the sidelength
-            float sideLength = _shape->find("sidelength")->asFloat();
+            float sideLength = (float)_shape->find("sidelength")->asFloat();
             Rayito::Tesseract *tempTess = new Rayito::Tesseract(tempPt, sideLength, tempMat);
             return tempTess;
         }
+        return NULL;
     }
 
     SceneBuffer* m_scene;

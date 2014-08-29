@@ -9,6 +9,7 @@
 #include <fstream>      //for writing to the log file
 #include <iostream>     //ditto
 #include <time.h>       //ditto
+#include "SceneLoader.h"//for loading scenes from a file
 #include <QMainWindow>
 
 
@@ -40,6 +41,8 @@ private:
    Ui::MainWindow *ui;
 
    Rayito::Image *pImage;   //pointer to the image
+
+   SceneBuffer* buf;
 };
 
 

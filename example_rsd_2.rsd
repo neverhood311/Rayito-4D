@@ -28,7 +28,7 @@ scene = @Scene
 	
 	//camera
 	m_camera = @camera{
-		//TODO: these should be animatable
+		//these should be animatable
 		//LookAt
 		lookAt = [0.0, 0.0, 0.0, 0.0];
 		//LookFrom
@@ -131,31 +131,47 @@ scene = @Scene
 			shape = "hypercube";
 			frameRange = { min = 0; max = 15; };
 			rotation = {
-				//frame number = rotation data array [xy, xz, xw, yz, yw, zw]
+				//frame[number] = rotation data array [xy, xz, xw, yz, yw, zw]
 				//these must be in frame order
 				f0 = [20.0, 45.0, 0.0, 0.0, 15.0, 35.0];
 				f1 = [21.0, 44.0, 0.0, 2.0, 15.0, 35.0];
 				f2 = [23.0, 43.0, 0.0, 4.0, 15.0, 35.0];
 			};
 			translate = {
-				//frame number = translation data [x, y, z, w]
+				//frame[number] = translation data [x, y, z, w]
 				f3 = [12.0, 0.0, 0.0, 0.0];
 				//between 0 and 12, the translation is linearly interpolated
 				f12 = [0.1, 0.0, 0.0, 0.0];
 			};
 			visibility = {
-				//frame number = visbile or not
-				f4 = 1;
+				//frame[number] = visible or not
+				f4 = [1];
 				//invisible on frames 13 and 14
-				f13 = 0;
+				f13 = [0];
 				//once again visible on frame 15
-				f15 = 1;
+				f15 = [1];
 			};
 		}
 	];
 	
-	
-	
+	//the positions of the three points that are important to the camera: at, from, and up
+	m_camTransforms = {
+		frameRange = { min = 0; max = 24; };
+		//any of these is optional; initial values will be set
+		anim_lookAt = {
+			f0 = [0.0, 0.0, 0.0, -10.0];
+			f24 = [0.0, 0.0, 0.0, 10.0];
+		};
+		anim_lookFrom = {
+			f0 = [0.0, 5.0, 15.0, -10.0];
+			f24 = [0.0, 5.0, 15.0, 10.0];
+		};
+		anim_lookUp = {
+			f0 = [0.0, 1.0, 0.0, 0.0];
+			f24 = [0.0, 1.0, 0.0, 0.0];
+		};
+		//the fov is also available to animate 
+	};
 };
 
 //material
